@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - EV Charging Slot Booking System{% endblock %}
+
+{% block content %}
+<div class="text-center p-5 bg-light rounded-3">
+    <h1 class="display-5 fw-bold">EV Charging Slot Booking System</h1>
+    <p class="col-lg-8 mx-auto fs-5">
+        Find charging stations, view real-time availability, and book your slot in advance.
+        Powered by machine learning based load prediction for smarter charging decisions.
+    </p>
+    <p class="text-muted">Login and registration will be added in Phase 2.</p>
+</div>
+
+<div class="row mt-5 g-4">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title">Find Stations</h5>
+                <p class="card-text">Browse charging stations near you on an interactive map.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title">Book Slots</h5>
+                <p class="card-text">Reserve a charging slot in advance and avoid the wait.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title">Smart Predictions</h5>
+                <p class="card-text">ML-based load prediction helps you pick the least crowded slot.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
