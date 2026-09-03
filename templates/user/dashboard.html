@@ -2,7 +2,22 @@
 {% block title %}Driver Dashboard{% endblock %}
 
 {% block content %}
-<h2>Welcome, {{ request.user.username }}</h2>
-<p class="text-muted">Role: {{ request.user.role }}</p>
-<p>Station browsing, booking, and slot recommendation will be added in later phases.</p>
+<div class="mb-4">
+    <h2>Driver Dashboard</h2>
+    <p class="text-muted">Welcome, <strong>{{ request.user.username }}</strong> ({{ request.user.role }})</p>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100 bg-white">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">
+                    <i class="bi bi-geo-alt text-success me-2"></i>Station Map
+                </h5>
+                <p class="card-text text-muted">Explore active EV charging stations on the interactive map.</p>
+                <a href="{% url 'core:driver_station_map' %}" class="btn btn-primary">Open Station Map</a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

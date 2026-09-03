@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Station Map{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #stationMap {
+        height: 520px;
+        width: 100%;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2>Station Map</h2>
+        <p class="text-muted mb-0">Explore all active EV charging stations on the map.</p>
+    </div>
+    <div>
+        {% if user.is_authenticated %}
+            <a href="{% if user.is_admin %}{% url 'core:admin_dashboard' %}{% else %}{% url 'core:driver_dashboard' %}{% endif %}" class="btn btn-secondary">
+                Back to Dashboard
+            </a>
+        {% else %}
+            <a href="{% url 'core:home' %}" class="btn btn-secondary">
+                Back to Home
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <span class="fw-bold text-primary">
+            <i class="bi bi-geo-alt-fill me-1"></i>Active Charging Stations ({{ stations|length }})
+        </span>
+        <button id="resetMapBtn" class="btn btn-sm btn-outline-secondary">
+            Reset View
+        </button>
+    </div>
+    <div class="card-body p-0">
+        <div id="stationMap"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    var map = L.map('stationMap').setView([20.5937, 78.9629], 5);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    var stations = [
+        {% for station in stations %}
+        {
+            name: "{{ station.name|escapejs }}",
+            code: "{{ station.station_code|escapejs }}",
+            address: "{{ station.address|escapejs }}",
+            status: "{{ station.status|escapejs }}",
+            chargers: {{ station.number_of_chargers }},
+            lat: {{ station.latitude }},
+            lng: {{ station.longitude }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    stations.forEach(function(s) {
+        var marker = L.marker([s.lat, s.lng]).addTo(map);
+        var popupContent =
+            "<div style='min-width: 160px;'>" +
+            "<strong>" + s.name + "</strong> (" + s.code + ")<br>" +
+            "<small class='text-muted'>" + s.address + "</small><br>" +
+            "<strong>Chargers:</strong> " + s.chargers + "<br>" +
+            "<strong>Status:</strong> <span class='badge bg-success'>" + s.status + "</span>" +
+            "</div>";
+        marker.bindPopup(popupContent);
+    });
+
+    var group = null;
+    if (stations.length > 0) {
+        group = new L.featureGroup(stations.map(function(s) {
+            return L.marker([s.lat, s.lng]);
+        }));
+        map.fitBounds(group.getBounds().pad(0.2));
+    }
+
+    var resetBtn = document.getElementById('resetMapBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            if (group && stations.length > 0) {
+                map.fitBounds(group.getBounds().pad(0.2));
+            } else {
+                map.setView([20.5937, 78.9629], 5);
+            }
+        });
+    }
+</script>
+{% endblock %}

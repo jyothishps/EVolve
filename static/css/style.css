@@ -1,0 +1,28 @@
+/* Basic styles for EV Charging Slot Booking System */
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+main {
+    flex: 1;
+}
+
+#stationMap {
+    height: 520px;
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.card {
+    border: 1px solid #dee2e6;
+}
+
+.footer {
+    margin-top: auto;
+}

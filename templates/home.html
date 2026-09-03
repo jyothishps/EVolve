@@ -1,39 +1,76 @@
 {% extends 'base.html' %}
-
 {% block title %}Home - EV Charging Slot Booking System{% endblock %}
 
 {% block content %}
-<div class="text-center p-5 bg-light rounded-3">
-    <h1 class="display-5 fw-bold">EV Charging Slot Booking System</h1>
-    <p class="col-lg-8 mx-auto fs-5">
-        Find charging stations, view real-time availability, and book your slot in advance.
-        Powered by machine learning based load prediction for smarter charging decisions.
+<!-- Hero Section -->
+<div class="p-5 mb-4 bg-white rounded-3 shadow-sm border text-center">
+    <h1 class="display-6 fw-bold mb-3">EV Charging Slot Booking System</h1>
+    <p class="col-md-8 mx-auto fs-5 text-muted mb-4">
+        Locate nearby charging stations and view real-time station availability across the region.
     </p>
-    <p class="text-muted">Login and registration will be added in Phase 2.</p>
+    <div class="d-flex justify-content-center gap-2 flex-wrap">
+        <a href="{% url 'core:driver_station_map' %}" class="btn btn-primary btn-lg px-4">
+            <i class="bi bi-geo-alt me-1"></i> View Station Map
+        </a>
+        {% if user.is_authenticated %}
+            {% if user.is_admin %}
+            <a href="{% url 'core:admin_dashboard' %}" class="btn btn-outline-dark btn-lg px-4">
+                Admin Dashboard
+            </a>
+            {% else %}
+            <a href="{% url 'core:driver_dashboard' %}" class="btn btn-outline-dark btn-lg px-4">
+                My Dashboard
+            </a>
+            {% endif %}
+        {% else %}
+            <a href="{% url 'core:register' %}" class="btn btn-success btn-lg px-4">
+                Register
+            </a>
+            <a href="{% url 'core:login' %}" class="btn btn-outline-secondary btn-lg px-4">
+                Sign In
+            </a>
+        {% endif %}
+    </div>
 </div>
 
-<div class="row mt-5 g-4">
+<!-- Features Section -->
+<div class="row g-4 mt-2 mb-4">
     <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body text-center">
-                <h5 class="card-title">Find Stations</h5>
-                <p class="card-text">Browse charging stations near you on an interactive map.</p>
+        <div class="card h-100 shadow-sm bg-white">
+            <div class="card-body text-center p-4">
+                <div class="fs-1 text-primary mb-3">
+                    <i class="bi bi-map"></i>
+                </div>
+                <h5 class="card-title fw-bold">Interactive Map</h5>
+                <p class="card-text text-muted">
+                    Locate active EV charging hubs on Leaflet and OpenStreetMap.
+                </p>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body text-center">
-                <h5 class="card-title">Book Slots</h5>
-                <p class="card-text">Reserve a charging slot in advance and avoid the wait.</p>
+        <div class="card h-100 shadow-sm bg-white">
+            <div class="card-body text-center p-4">
+                <div class="fs-1 text-success mb-3">
+                    <i class="bi bi-ev-station"></i>
+                </div>
+                <h5 class="card-title fw-bold">Station Information</h5>
+                <p class="card-text text-muted">
+                    Inspect station coordinates, addresses, and available charging points.
+                </p>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body text-center">
-                <h5 class="card-title">Smart Predictions</h5>
-                <p class="card-text">ML-based load prediction helps you pick the least crowded slot.</p>
+        <div class="card h-100 shadow-sm bg-white">
+            <div class="card-body text-center p-4">
+                <div class="fs-1 text-warning mb-3">
+                    <i class="bi bi-shield-lock"></i>
+                </div>
+                <h5 class="card-title fw-bold">Role-Based Access</h5>
+                <p class="card-text text-muted">
+                    Separate dashboards for administrators to manage stations and drivers to browse them.
+                </p>
             </div>
         </div>
     </div>

@@ -13,4 +13,7 @@ urlpatterns = [
 
     # Station management (Admin)
     path('manage/stations/add/', views.station_add, name='station_add'),
+
+    # Driver station map
+    path('stations/map/view/', views.driver_station_map, name='driver_station_map'),
 ]

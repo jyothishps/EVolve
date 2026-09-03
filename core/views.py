@@ -82,3 +82,12 @@ def station_add(request):
         messages.success(request, 'Station added successfully.')
         return redirect('core:admin_dashboard')
     return render(request, 'admin/station_form.html', {'form': form, 'action': 'Add'})
+
+
+@login_required
+def driver_station_map(request):
+    """
+    Driver view: map of all active stations using Leaflet + OpenStreetMap.
+    """
+    stations = Station.objects.filter(status='Active')
+    return render(request, 'user/station_map.html', {'stations': stations})

@@ -1,17 +1,22 @@
 {% extends 'base.html' %}
-{% block title %}Login{% endblock %}
+{% block title %}Login - EV Charging Slot Booking System{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow-sm">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm bg-white">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h4 class="mb-0">Sign In</h4>
+            </div>
             <div class="card-body p-4">
-                <h3 class="card-title mb-4 text-center">Login</h3>
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        Invalid username or password. Please try again.
+                    </div>
+                {% endif %}
+
                 <form method="post">
                     {% csrf_token %}
-                    {% if form.errors %}
-                        <div class="alert alert-danger">Invalid username or password.</div>
-                    {% endif %}
                     <div class="mb-3">
                         <label class="form-label">Username</label>
                         {{ form.username }}
@@ -20,11 +25,13 @@
                         <label class="form-label">Password</label>
                         {{ form.password }}
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                    <button type="submit" class="btn btn-primary w-100 mt-2">Login</button>
                 </form>
-                <p class="mt-3 text-center">
-                    No account? <a href="{% url 'core:register' %}">Register here</a>
-                </p>
+
+                <div class="mt-3 text-center">
+                    <span class="text-muted small">Don't have an account?</span>
+                    <a href="{% url 'core:register' %}" class="small">Register here</a>
+                </div>
             </div>
         </div>
     </div>
