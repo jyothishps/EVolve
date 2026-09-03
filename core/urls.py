@@ -10,4 +10,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.driver_dashboard, name='driver_dashboard'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+
+    # Station management (Admin)
+    path('manage/stations/add/', views.station_add, name='station_add'),
 ]

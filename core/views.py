@@ -4,8 +4,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.urls import reverse_lazy
-from .forms import DriverRegisterForm
-from .forms import DriverRegisterForm, StyledAuthenticationForm
+
+from .decorators import admin_required
+from .forms import StationForm, DriverRegisterForm, StyledAuthenticationForm
+from .models import Station
+
 
 def home(request):
     context = {
@@ -66,3 +69,16 @@ def admin_dashboard(request):
         messages.error(request, 'Access denied. Admins only.')
         return redirect('core:driver_dashboard')
     return render(request, 'admin/dashboard.html')
+
+
+@admin_required
+def station_add(request):
+    """
+    Admin view: register a new charging station into the network.
+    """
+    form = StationForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Station added successfully.')
+        return redirect('core:admin_dashboard')
+    return render(request, 'admin/station_form.html', {'form': form, 'action': 'Add'})
