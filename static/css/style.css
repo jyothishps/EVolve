@@ -733,6 +733,11 @@ a:hover {
   background-color: #11171d !important;
 }
 
+/* Dark mode map tile filter: zero API key, no watermark, 100% free */
+#stationMap .leaflet-tile-pane {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+}
+
 .leaflet-popup-content-wrapper {
   background: var(--ev-surface-elevated) !important;
   border: 1px solid var(--ev-border) !important;
@@ -795,4 +800,97 @@ a:hover {
 
 .border-subtle {
   border-color: var(--ev-border) !important;
+}
+
+/* =========================================================
+   Print Stylesheet (Passes & Receipts)
+   ========================================================= */
+@media print {
+  nav.navbar,
+  footer,
+  .btn,
+  .d-print-none,
+  .alert,
+  .ev-page-header p {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 11pt;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  main.container {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .ev-ticket-card {
+    max-width: 100% !important;
+    width: 100% !important;
+    border: 2px solid #1f2937 !important;
+    border-radius: 8px !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  .ev-ticket-header {
+    background: #f3f4f6 !important;
+    border-bottom: 2px solid #1f2937 !important;
+    color: #111827 !important;
+    padding: 1.25rem !important;
+  }
+
+  .ev-ticket-header h5 {
+    color: #111827 !important;
+  }
+
+  .ev-ticket-header small {
+    color: #4b5563 !important;
+  }
+
+  .ev-ticket-body {
+    padding: 1.25rem !important;
+    background: #ffffff !important;
+  }
+
+  .ev-meta-row {
+    border-bottom: 1px dashed #9ca3af !important;
+    padding: 0.6rem 0 !important;
+  }
+
+  .ev-meta-label {
+    color: #4b5563 !important;
+    font-weight: 500;
+  }
+
+  .ev-meta-value {
+    color: #111827 !important;
+    font-weight: 700;
+  }
+
+  .ev-badge {
+    border: 1px solid #1f2937 !important;
+    color: #111827 !important;
+    background: #e5e7eb !important;
+    font-size: 8pt !important;
+    padding: 0.2rem 0.5rem !important;
+  }
+
+  .ev-badge.confirmed,
+  .ev-badge.available {
+    background: #dcfce7 !important;
+    color: #15803d !important;
+    border-color: #15803d !important;
+  }
+
+  .ev-badge-dot {
+    display: none !important;
+  }
 }

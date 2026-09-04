@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Booking #{{ booking.id }} - EV Charge Booking{% endblock %}
+{% block title %}Booking Pass #{{ booking.id }} - EVolve{% endblock %}
 
 {% block content %}
 <div class="text-center mb-4">
@@ -57,7 +57,10 @@
                 </a>
             </form>
         {% else %}
-            <div class="d-grid gap-2 mt-4">
+            <div class="d-grid gap-2 mt-4 d-print-none">
+                <button type="button" class="btn btn-outline-light d-inline-flex align-items-center justify-content-center gap-1" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Print / Save Pass
+                </button>
                 {% if booking.status == 'Confirmed' or booking.status == 'Pending' %}
                 <a href="{% url 'core:booking_cancel' booking.id %}" class="btn btn-outline-danger">
                     <i class="bi bi-x-circle me-1"></i> Cancel Reservation

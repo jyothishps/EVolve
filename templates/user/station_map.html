@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Station Map - EV Charge Booking{% endblock %}
+{% block title %}Station Map - EVolve{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -8,6 +8,10 @@
         height: 540px;
         width: 100%;
         border-radius: 0 0 var(--ev-radius) var(--ev-radius);
+    }
+    /* Dark-mode map tile filter: zero API key, no watermark, 100% free */
+    #stationMap .leaflet-tile-pane {
+        filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
     }
     .custom-ev-marker {
         display: flex;
@@ -49,13 +53,18 @@
 </div>
 
 <div class="card shadow-sm border overflow-hidden mb-4">
-    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span class="fw-semibold" style="color: var(--ev-accent);">
             <i class="bi bi-broadcast me-2"></i> Active Network Stations
         </span>
-        <span class="ev-badge active">
-            <span class="ev-badge-dot"></span> {{ stations|length }} Hub{{ stations|length|pluralize }} Online
-        </span>
+        <div class="d-flex align-items-center gap-2">
+            <button id="resetMapBtn" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" title="Refocus map on stations">
+                <i class="bi bi-arrows-angle-contract"></i> Reset View
+            </button>
+            <span class="ev-badge active">
+                <span class="ev-badge-dot"></span> {{ stations|length }} Hub{{ stations|length|pluralize }} Online
+            </span>
+        </div>
     </div>
     <div class="card-body p-0">
         <div id="stationMap"></div>
@@ -72,10 +81,9 @@
 <script>
     var map = L.map('stationMap').setView([20.5937, 78.9629], 5);
 
-    // CartoDB Dark Matter dark tile layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
+    // Keyless OpenStreetMap layer styled with CSS dark filter (no watermark)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
     }).addTo(map);
 
@@ -117,11 +125,23 @@
         marker.bindPopup(popupContent);
     });
 
+    var group = null;
     if (stations.length > 0) {
-        var group = new L.featureGroup(stations.map(function(s) {
+        group = new L.featureGroup(stations.map(function(s) {
             return L.marker([s.lat, s.lng]);
         }));
         map.fitBounds(group.getBounds().pad(0.2));
+    }
+
+    var resetBtn = document.getElementById('resetMapBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            if (group && stations.length > 0) {
+                map.fitBounds(group.getBounds().pad(0.2));
+            } else {
+                map.setView([20.5937, 78.9629], 5);
+            }
+        });
     }
 </script>
 {% endblock %}
