@@ -4,5 +4,36 @@
 {% block content %}
 <h2>Admin Dashboard</h2>
 <p class="text-muted">Logged in as {{ request.user.username }} ({{ request.user.role }})</p>
-<p>Station, charger, slot, booking management will be added in later phases.</p>
+
+<div class="row g-3 mt-2">
+    <div class="col-md-4">
+        <a href="{% url 'core:station_list' %}" class="text-decoration-none">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5>Manage Stations</h5>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'core:charger_list' %}" class="text-decoration-none">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5>Manage Chargers</h5>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'core:slot_list' %}" class="text-decoration-none">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5>Manage Slots</h5>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<p class="mt-4 text-muted">Booking management, charging sessions, and analytics will be added in later phases.</p>
 {% endblock %}

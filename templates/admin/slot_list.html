@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Manage Slots{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Charging Slots</h2>
+    <a href="{% url 'core:slot_add' %}" class="btn btn-primary">+ Add Slot</a>
+</div>
+
+<table class="table table-bordered table-hover bg-white">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Station</th>
+            <th>Charger</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for slot in slots %}
+        <tr>
+            <td>{{ slot.id }}</td>
+            <td>{{ slot.station.station_code }}</td>
+            <td>Charger #{{ slot.charger.id }}</td>
+            <td>{{ slot.date }}</td>
+            <td>{{ slot.start_time }} - {{ slot.end_time }}</td>
+            <td>
+                <span class="badge bg-{% if slot.status == 'Available' %}success{% elif slot.status == 'Reserved' %}warning{% elif slot.status == 'Completed' %}info{% else %}secondary{% endif %}">
+                    {{ slot.status }}
+                </span>
+            </td>
+            <td>
+                <a href="{% url 'core:slot_edit' slot.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <form method="post" action="{% url 'core:slot_delete' slot.pk %}" class="d-inline" onsubmit="return confirm('Delete this slot?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted">No slots yet.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
