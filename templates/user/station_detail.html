@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}{{ station.name }}{% endblock %}
+
+{% block content %}
+<h2>{{ station.name }} ({{ station.station_code }})</h2>
+<p class="text-muted">{{ station.address }}</p>
+<p><strong>Status:</strong> <span class="badge bg-success">{{ station.status }}</span></p>
+<p><strong>Location Type:</strong> {{ station.location_type|default:"N/A" }}</p>
+<p>{{ station.description }}</p>
+
+<hr>
+
+<h4>Chargers</h4>
+<table class="table table-bordered bg-white">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Power (kW)</th>
+            <th>Connector Type</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for charger in chargers %}
+        <tr>
+            <td>{{ charger.id }}</td>
+            <td>{{ charger.charging_power_kW }}</td>
+            <td>{{ charger.connector_type }}</td>
+            <td>
+                <span class="badge bg-{% if charger.status == 'Available' %}success{% elif charger.status == 'Occupied' %}warning{% else %}secondary{% endif %}">
+                    {{ charger.status }}
+                </span>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted">No chargers configured for this station.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<hr>
+
+<h4>Available Slots</h4>
+<table class="table table-bordered bg-white">
+    <thead class="table-dark">
+        <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Charger</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for slot in available_slots %}
+        <tr>
+            <td>{{ slot.date }}</td>
+            <td>{{ slot.start_time }} - {{ slot.end_time }}</td>
+            <td>Charger #{{ slot.charger.id }} ({{ slot.charger.charging_power_kW }} kW)</td>
+            <td>
+                <button class="btn btn-sm btn-primary" disabled title="Booking added in Phase 6">Book</button>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted">No available slots right now.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'core:driver_station_list' %}" class="btn btn-secondary">Back to Stations</a>
+{% endblock %}

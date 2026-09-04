@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Station Map{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #stationMap {
+        height: 500px;
+        width: 100%;
+        border-radius: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2>Station Map</h2>
+<p class="text-muted">Click a marker to view station details.</p>
+
+<div id="stationMap"></div>
+
+<a href="{% url 'core:driver_station_list' %}" class="btn btn-secondary mt-3">Back to List View</a>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    var map = L.map('stationMap').setView([20.5937, 78.9629], 5);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    var stations = [
+        {% for station in stations %}
+        {
+            name: "{{ station.name|escapejs }}",
+            code: "{{ station.station_code|escapejs }}",
+            address: "{{ station.address|escapejs }}",
+            status: "{{ station.status|escapejs }}",
+            chargers: {{ station.number_of_chargers }},
+            lat: {{ station.latitude }},
+            lng: {{ station.longitude }},
+            url: "{% url 'core:driver_station_detail' station.id %}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    stations.forEach(function(s) {
+        var marker = L.marker([s.lat, s.lng]).addTo(map);
+        var popupContent =
+            "<strong>" + s.name + "</strong> (" + s.code + ")<br>" +
+            s.address + "<br>" +
+            "Status: " + s.status + "<br>" +
+            "Chargers: " + s.chargers + "<br>" +
+            "<a href='" + s.url + "' class='btn btn-sm btn-primary mt-1'>View Station</a>";
+        marker.bindPopup(popupContent);
+    });
+
+    if (stations.length > 0) {
+        var group = new L.featureGroup(stations.map(function(s) {
+            return L.marker([s.lat, s.lng]);
+        }));
+        map.fitBounds(group.getBounds().pad(0.2));
+    }
+</script>
+{% endblock %}

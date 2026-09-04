@@ -4,5 +4,33 @@
 {% block content %}
 <h2>Welcome, {{ request.user.username }}</h2>
 <p class="text-muted">Role: {{ request.user.role }}</p>
-<p>Station browsing, booking, and slot recommendation will be added in later phases.</p>
+
+<div class="row g-3 mt-2">
+    <div class="col-md-4">
+        <a href="{% url 'core:driver_station_list' %}" class="text-decoration-none">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5>Browse Stations</h5>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'core:driver_station_map' %}" class="text-decoration-none">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5>View Map</h5>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm opacity-50">
+            <div class="card-body text-center">
+                <h5>My Bookings</h5>
+                <small class="text-muted">Added in Phase 6</small>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

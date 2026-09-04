@@ -169,3 +169,43 @@ def slot_delete(request, slot_id):
         messages.success(request, 'Slot deleted.')
         return redirect('core:slot_list')
     return render(request, 'admin/slot_list.html', {'slots': ChargingSlot.objects.all()})
+
+
+
+# ---------- DRIVER STATION BROWSING ----------
+
+@login_required
+def driver_station_list(request):
+    """
+    Driver view: list all active stations.
+    """
+    stations = Station.objects.filter(status='Active').order_by('station_code')
+    return render(request, 'user/station_list.html', {'stations': stations})
+
+
+@login_required
+def driver_station_detail(request, station_id):
+    """
+    Driver view: station details, chargers, and available slots.
+    """
+    station = get_object_or_404(Station, id=station_id)
+    chargers = Charger.objects.filter(station=station)
+    available_slots = ChargingSlot.objects.filter(
+        station=station, status='Available'
+    ).order_by('date', 'start_time')
+
+    context = {
+        'station': station,
+        'chargers': chargers,
+        'available_slots': available_slots,
+    }
+    return render(request, 'user/station_detail.html', context)
+
+
+@login_required
+def driver_station_map(request):
+    """
+    Driver view: map of all active stations using Leaflet + OpenStreetMap.
+    """
+    stations = Station.objects.filter(status='Active')
+    return render(request, 'user/station_map.html', {'stations': stations})
