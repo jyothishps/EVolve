@@ -1,24 +1,47 @@
 {% extends 'base.html' %}
-{% block title %}Station Map{% endblock %}
+{% block title %}Station Map - EV Charge Booking{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     #stationMap {
-        height: 500px;
+        height: 520px;
         width: 100%;
-        border-radius: 0.5rem;
+        border-radius: var(--ev-radius);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<h2>Station Map</h2>
-<p class="text-muted">Click a marker to view station details.</p>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div class="ev-page-header mb-0">
+        <h2>Interactive Station Map</h2>
+        <p><i class="bi bi-geo-alt me-1"></i>Explore real-time charging locations. Click any marker for info.</p>
+    </div>
+    <div>
+        <a href="{% url 'core:driver_station_list' %}" class="btn btn-outline-secondary d-inline-flex align-items-center">
+            <i class="bi bi-list-ul me-1"></i> Back to List View
+        </a>
+    </div>
+</div>
 
-<div id="stationMap"></div>
-
-<a href="{% url 'core:driver_station_list' %}" class="btn btn-secondary mt-3">Back to List View</a>
+<div class="card shadow-sm border-0 overflow-hidden mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-primary">
+            <i class="bi bi-broadcast me-1"></i> Active Network Stations
+        </span>
+        <span class="badge bg-primary-subtle text-primary border">
+            {{ stations|length }} Station{{ stations|length|pluralize }} Online
+        </span>
+    </div>
+    <div class="card-body p-0">
+        <div id="stationMap"></div>
+    </div>
+    <div class="card-footer bg-light py-2 px-3 text-muted small d-flex align-items-center gap-2">
+        <i class="bi bi-info-circle"></i>
+        <span>Markers indicate verified fast and standard EV charging hubs. Tap a marker to view available chargers.</span>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -49,11 +72,13 @@
     stations.forEach(function(s) {
         var marker = L.marker([s.lat, s.lng]).addTo(map);
         var popupContent =
-            "<strong>" + s.name + "</strong> (" + s.code + ")<br>" +
-            s.address + "<br>" +
-            "Status: " + s.status + "<br>" +
-            "Chargers: " + s.chargers + "<br>" +
-            "<a href='" + s.url + "' class='btn btn-sm btn-primary mt-1'>View Station</a>";
+            "<div class='p-1'>" +
+            "<h6 class='fw-bold mb-1'>" + s.name + "</h6>" +
+            "<span class='badge bg-light text-dark border mb-2'>" + s.code + "</span><br>" +
+            "<p class='small text-muted mb-2'><i class='bi bi-geo-alt me-1'></i>" + s.address + "</p>" +
+            "<p class='small mb-2'><i class='bi bi-ev-station me-1'></i><strong>" + s.chargers + "</strong> Charger(s)</p>" +
+            "<a href='" + s.url + "' class='btn btn-sm btn-primary w-100'>View Station & Slots</a>" +
+            "</div>";
         marker.bindPopup(popupContent);
     });
 
@@ -64,4 +89,4 @@
         map.fitBounds(group.getBounds().pad(0.2));
     }
 </script>
-{% endblock %}
+{% endblock %}

@@ -2,36 +2,52 @@
 {% block title %}Driver Dashboard{% endblock %}
 
 {% block content %}
-<h2>Welcome, {{ request.user.username }}</h2>
-<p class="text-muted">Role: {{ request.user.role }}</p>
 
-<div class="row g-3 mt-2">
+<div class="ev-page-header">
+    <h2>Welcome, {{ request.user.username }}</h2>
+    <p><i class="bi bi-person-badge me-1"></i>Role: {{ request.user.role }}</p>
+</div>
+
+<div class="row g-3 mt-1">
     <div class="col-md-4">
         <a href="{% url 'core:driver_station_list' %}" class="text-decoration-none">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5>Browse Stations</h5>
+            <div class="card ev-hover h-100">
+                <div class="card-body text-center py-4">
+                    <div class="ev-stat-icon bg-primary-soft mx-auto mb-3">
+                        <i class="bi bi-ev-station"></i>
+                    </div>
+                    <h5 class="mb-1">Browse Stations</h5>
+                    <p class="text-muted small mb-0">Find nearby charging stations</p>
                 </div>
             </div>
         </a>
     </div>
     <div class="col-md-4">
         <a href="{% url 'core:driver_station_map' %}" class="text-decoration-none">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5>View Map</h5>
+            <div class="card ev-hover h-100">
+                <div class="card-body text-center py-4">
+                    <div class="ev-stat-icon bg-accent-soft mx-auto mb-3">
+                        <i class="bi bi-geo-alt"></i>
+                    </div>
+                    <h5 class="mb-1">View Map</h5>
+                    <p class="text-muted small mb-0">See stations on the map</p>
                 </div>
             </div>
         </a>
     </div>
-        <div class="col-md-4">
+    <div class="col-md-4">
         <a href="{% url 'core:booking_list' %}" class="text-decoration-none">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5>My Bookings</h5>
+            <div class="card ev-hover h-100">
+                <div class="card-body text-center py-4">
+                    <div class="ev-stat-icon bg-warning-soft mx-auto mb-3">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <h5 class="mb-1">My Bookings</h5>
+                    <p class="text-muted small mb-0">Track your slot bookings</p>
                 </div>
             </div>
         </a>
     </div>
 </div>
+
 {% endblock %}

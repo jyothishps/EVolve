@@ -1,46 +1,80 @@
 {% extends 'base.html' %}
-{% block title %}Manage Chargers{% endblock %}
+{% block title %}Manage Chargers - Admin{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Chargers</h2>
-    <a href="{% url 'core:charger_add' %}" class="btn btn-primary">+ Add Charger</a>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div class="ev-page-header mb-0">
+        <h2>Chargers</h2>
+        <p><i class="bi bi-lightning-charge me-1"></i>Configure and monitor individual charging hardware units</p>
+    </div>
+    <div>
+        <a href="{% url 'core:charger_add' %}" class="btn btn-primary d-inline-flex align-items-center">
+            <i class="bi bi-plus-lg me-1"></i> Add Charger
+        </a>
+    </div>
 </div>
 
-<table class="table table-bordered table-hover bg-white">
-    <thead class="table-dark">
-        <tr>
-            <th>ID</th>
-            <th>Station</th>
-            <th>Power (kW)</th>
-            <th>Connector</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for charger in chargers %}
-        <tr>
-            <td>{{ charger.id }}</td>
-            <td>{{ charger.station.station_code }}</td>
-            <td>{{ charger.charging_power_kW }}</td>
-            <td>{{ charger.connector_type }}</td>
-            <td>
-                <span class="badge bg-{% if charger.status == 'Available' %}success{% elif charger.status == 'Occupied' %}warning{% elif charger.status == 'Maintenance' %}secondary{% else %}dark{% endif %}">
-                    {{ charger.status }}
-                </span>
-            </td>
-            <td>
-                <a href="{% url 'core:charger_edit' charger.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
-                <form method="post" action="{% url 'core:charger_delete' charger.pk %}" class="d-inline" onsubmit="return confirm('Delete this charger?');">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                </form>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="text-center text-muted">No chargers yet.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endblock %}
+<div class="ev-table-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Charger ID</th>
+                    <th>Station</th>
+                    <th>Power Output</th>
+                    <th>Connector</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for charger in chargers %}
+                <tr>
+                    <td><strong>Charger #{{ charger.id }}</strong></td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ charger.station.station_code }}</span>
+                        <span class="ms-1 text-muted small">{{ charger.station.name }}</span>
+                    </td>
+                    <td>
+                        <span class="fw-semibold text-primary">{{ charger.charging_power_kW }} kW</span>
+                        {% if charger.charging_power_kW >= 50 %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis border ms-1">DC Fast</span>
+                        {% endif %}
+                    </td>
+                    <td><i class="bi bi-plug-fill text-secondary me-1"></i>{{ charger.connector_type }}</td>
+                    <td>
+                        <span class="ev-badge {% if charger.status == 'Available' %}available{% elif charger.status == 'Occupied' %}pending{% else %}unavailable{% endif %}">
+                            <span class="ev-badge-dot"></span> {{ charger.status }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'core:charger_edit' charger.pk %}" class="btn btn-sm btn-outline-primary me-1">
+                            <i class="bi bi-pencil-square me-1"></i> Edit
+                        </a>
+                        <form method="post" action="{% url 'core:charger_delete' charger.pk %}" class="d-inline" onsubmit="return confirm('Delete this charger?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash3 me-1"></i> Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="ev-empty-state py-5">
+                            <i class="bi bi-lightning-charge"></i>
+                            <h5>No Chargers Configured</h5>
+                            <p class="text-muted">Start by adding a charger to an active station.</p>
+                            <a href="{% url 'core:charger_add' %}" class="btn btn-primary btn-sm mt-2">
+                                + Add Charger
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

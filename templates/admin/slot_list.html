@@ -1,48 +1,82 @@
 {% extends 'base.html' %}
-{% block title %}Manage Slots{% endblock %}
+{% block title %}Manage Slots - Admin{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Charging Slots</h2>
-    <a href="{% url 'core:slot_add' %}" class="btn btn-primary">+ Add Slot</a>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div class="ev-page-header mb-0">
+        <h2>Charging Slots</h2>
+        <p><i class="bi bi-clock-history me-1"></i>Manage time window availability for stations and chargers</p>
+    </div>
+    <div>
+        <a href="{% url 'core:slot_add' %}" class="btn btn-primary d-inline-flex align-items-center">
+            <i class="bi bi-plus-lg me-1"></i> Add Slot
+        </a>
+    </div>
 </div>
 
-<table class="table table-bordered table-hover bg-white">
-    <thead class="table-dark">
-        <tr>
-            <th>ID</th>
-            <th>Station</th>
-            <th>Charger</th>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for slot in slots %}
-        <tr>
-            <td>{{ slot.id }}</td>
-            <td>{{ slot.station.station_code }}</td>
-            <td>Charger #{{ slot.charger.id }}</td>
-            <td>{{ slot.date }}</td>
-            <td>{{ slot.start_time }} - {{ slot.end_time }}</td>
-            <td>
-                <span class="badge bg-{% if slot.status == 'Available' %}success{% elif slot.status == 'Reserved' %}warning{% elif slot.status == 'Completed' %}info{% else %}secondary{% endif %}">
-                    {{ slot.status }}
-                </span>
-            </td>
-            <td>
-                <a href="{% url 'core:slot_edit' slot.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
-                <form method="post" action="{% url 'core:slot_delete' slot.pk %}" class="d-inline" onsubmit="return confirm('Delete this slot?');">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                </form>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="7" class="text-center text-muted">No slots yet.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endblock %}
+<div class="ev-table-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Slot ID</th>
+                    <th>Station</th>
+                    <th>Charger Unit</th>
+                    <th>Date</th>
+                    <th>Time Window</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slot in slots %}
+                <tr>
+                    <td><strong>#{{ slot.id }}</strong></td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ slot.station.station_code }}</span>
+                    </td>
+                    <td>Charger #{{ slot.charger.id }}</td>
+                    <td>
+                        <i class="bi bi-calendar-event text-muted me-1"></i>{{ slot.date }}
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">
+                            <i class="bi bi-clock me-1"></i>{{ slot.start_time }} - {{ slot.end_time }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="ev-badge {% if slot.status == 'Available' %}available{% elif slot.status == 'Reserved' %}pending{% elif slot.status == 'Completed' %}confirmed{% else %}unavailable{% endif %}">
+                            <span class="ev-badge-dot"></span> {{ slot.status }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'core:slot_edit' slot.pk %}" class="btn btn-sm btn-outline-primary me-1">
+                            <i class="bi bi-pencil-square me-1"></i> Edit
+                        </a>
+                        <form method="post" action="{% url 'core:slot_delete' slot.pk %}" class="d-inline" onsubmit="return confirm('Delete this slot?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash3 me-1"></i> Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="ev-empty-state py-5">
+                            <i class="bi bi-clock-history"></i>
+                            <h5>No Slots Configured</h5>
+                            <p class="text-muted">Generate or create slots for drivers to book.</p>
+                            <a href="{% url 'core:slot_add' %}" class="btn btn-primary btn-sm mt-2">
+                                + Add Slot
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

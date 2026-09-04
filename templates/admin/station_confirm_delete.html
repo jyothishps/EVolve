@@ -1,13 +1,32 @@
 {% extends 'base.html' %}
-{% block title %}Delete Station{% endblock %}
+{% block title %}Delete Station - Admin{% endblock %}
 
 {% block content %}
-<h2>Delete Station</h2>
-<p>Are you sure you want to delete <strong>{{ station.name }} ({{ station.station_code }})</strong>? This will also delete related chargers, slots, and bookings.</p>
+<div class="row justify-content-center my-4">
+    <div class="col-md-6">
+        <div class="ev-form-card shadow-sm text-center">
+            <div class="ev-stat-icon bg-danger-soft mx-auto mb-3">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <h3 class="fw-bold mb-2">Delete Station</h3>
+            <p class="text-muted">
+                Are you sure you want to delete <strong>{{ station.name }} ({{ station.station_code }})</strong>?
+            </p>
+            <div class="alert alert-danger border small text-start mb-4">
+                <i class="bi bi-info-circle me-1"></i>
+                This action is irreversible. All related chargers, slots, and bookings linked to this station will be permanently deleted.
+            </div>
 
-<form method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Yes, Delete</button>
-    <a href="{% url 'core:station_list' %}" class="btn btn-secondary">Cancel</a>
-</form>
-{% endblock %}
+            <form method="post" class="d-grid gap-2">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-lg fw-semibold">
+                    <i class="bi bi-trash3-fill me-1"></i> Yes, Permanently Delete
+                </button>
+                <a href="{% url 'core:station_list' %}" class="btn btn-outline-secondary">
+                    Cancel & Return
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

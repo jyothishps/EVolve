@@ -1,0 +1,437 @@
+/* =========================================================
+   EV Charging Slot Booking System — Custom Design System
+   Foundation: CSS variables, base overrides, reusable classes
+   ========================================================= */
+
+:root {
+  /* Brand colors */
+  --ev-primary: #1e3a5f;
+  --ev-primary-light: #2563eb;
+  --ev-primary-dark: #142a45;
+  --ev-accent: #10b981;
+  --ev-accent-light: #d1fae5;
+  --ev-warning: #f59e0b;
+  --ev-warning-light: #fef3c7;
+  --ev-danger: #ef4444;
+  --ev-danger-light: #fee2e2;
+
+  /* Neutrals */
+  --ev-bg: #f8fafc;
+  --ev-surface: #ffffff;
+  --ev-border: #e2e8f0;
+  --ev-text: #1e293b;
+  --ev-text-muted: #64748b;
+
+  /* Spacing / radius */
+  --ev-radius: 12px;
+  --ev-radius-sm: 8px;
+  --ev-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --ev-shadow-hover: 0 8px 20px rgba(15, 23, 42, 0.10);
+
+  /* Font */
+  --ev-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ---------- Base ---------- */
+body {
+  font-family: var(--ev-font);
+  background-color: var(--ev-bg);
+  color: var(--ev-text);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* ---------- Navbar ---------- */
+.navbar.ev-navbar {
+  background-color: var(--ev-primary) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+}
+
+.ev-navbar .navbar-brand {
+  font-weight: 700;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ev-navbar .nav-link {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85) !important;
+  padding: 0.5rem 0.9rem !important;
+  border-radius: var(--ev-radius-sm);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ev-navbar .nav-link:hover,
+.ev-navbar .nav-link.active {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #fff !important;
+}
+
+.ev-navbar .btn-nav-logout {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  border-radius: var(--ev-radius-sm);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.ev-navbar .btn-nav-logout:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+/* ---------- Footer ---------- */
+.ev-footer {
+  background-color: var(--ev-primary-dark);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+/* ---------- Cards ---------- */
+.card {
+  border: 1px solid var(--ev-border);
+  border-radius: var(--ev-radius);
+  box-shadow: var(--ev-shadow);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card.ev-hover:hover {
+  box-shadow: var(--ev-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  background-color: var(--ev-surface);
+  border-bottom: 1px solid var(--ev-border);
+  font-weight: 600;
+}
+
+/* ---------- Stat cards (dashboards) ---------- */
+.ev-stat-card {
+  border-radius: var(--ev-radius);
+  border: 1px solid var(--ev-border);
+  background: var(--ev-surface);
+  box-shadow: var(--ev-shadow);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ev-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--ev-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.ev-stat-icon.bg-primary-soft { background: #dbeafe; color: var(--ev-primary-light); }
+.ev-stat-icon.bg-accent-soft { background: var(--ev-accent-light); color: var(--ev-accent); }
+.ev-stat-icon.bg-warning-soft { background: var(--ev-warning-light); color: var(--ev-warning); }
+.ev-stat-icon.bg-danger-soft { background: var(--ev-danger-light); color: var(--ev-danger); }
+
+.ev-stat-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.ev-stat-label {
+  font-size: 0.85rem;
+  color: var(--ev-text-muted);
+  font-weight: 500;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  border-radius: var(--ev-radius-sm);
+  font-weight: 500;
+  padding: 0.5rem 1.1rem;
+}
+
+.btn-primary {
+  background-color: var(--ev-primary-light);
+  border-color: var(--ev-primary-light);
+}
+
+.btn-primary:hover {
+  background-color: var(--ev-primary);
+  border-color: var(--ev-primary);
+}
+
+.btn-success {
+  background-color: var(--ev-accent);
+  border-color: var(--ev-accent);
+}
+
+.btn-outline-primary {
+  color: var(--ev-primary-light);
+  border-color: var(--ev-primary-light);
+}
+
+/* ---------- Badges / status chips ---------- */
+.ev-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.ev-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.ev-badge.available, .ev-badge.confirmed, .ev-badge.active {
+  background: var(--ev-accent-light);
+  color: #047857;
+}
+.ev-badge.available .ev-badge-dot, .ev-badge.confirmed .ev-badge-dot, .ev-badge.active .ev-badge-dot { background: var(--ev-accent); }
+
+.ev-badge.pending, .ev-badge.maintenance {
+  background: var(--ev-warning-light);
+  color: #b45309;
+}
+.ev-badge.pending .ev-badge-dot, .ev-badge.maintenance .ev-badge-dot { background: var(--ev-warning); }
+
+.ev-badge.cancelled, .ev-badge.inactive, .ev-badge.unavailable {
+  background: var(--ev-danger-light);
+  color: #b91c1c;
+}
+.ev-badge.cancelled .ev-badge-dot, .ev-badge.inactive .ev-badge-dot, .ev-badge.unavailable .ev-badge-dot { background: var(--ev-danger); }
+
+/* ---------- Tables ---------- */
+.table {
+  --bs-table-hover-bg: #f1f5f9;
+}
+
+.ev-table-card {
+  background: var(--ev-surface);
+  border: 1px solid var(--ev-border);
+  border-radius: var(--ev-radius);
+  box-shadow: var(--ev-shadow);
+  overflow: hidden;
+}
+
+.ev-table-card table {
+  margin-bottom: 0;
+}
+
+.ev-table-card thead th {
+  background-color: #f8fafc;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ev-text-muted);
+  border-bottom: 1px solid var(--ev-border);
+  font-weight: 600;
+}
+
+/* ---------- Forms ---------- */
+.ev-form-card {
+  max-width: 520px;
+  margin: 0 auto;
+  background: var(--ev-surface);
+  border: 1px solid var(--ev-border);
+  border-radius: var(--ev-radius);
+  box-shadow: var(--ev-shadow);
+  padding: 2rem;
+}
+
+.form-control, .form-select {
+  border-radius: var(--ev-radius-sm);
+  border-color: var(--ev-border);
+  padding: 0.55rem 0.85rem;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--ev-primary-light);
+  box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15);
+}
+
+.form-label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--ev-text);
+}
+
+/* ---------- Empty states ---------- */
+.ev-empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--ev-text-muted);
+}
+
+.ev-empty-state i {
+  font-size: 2.5rem;
+  color: var(--ev-border);
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* ---------- Alerts ---------- */
+.alert {
+  border-radius: var(--ev-radius-sm);
+  border: none;
+}
+
+/* ---------- Utility ---------- */
+.ev-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.ev-page-header {
+  margin-bottom: 1.75rem;
+}
+
+.ev-page-header p {
+  color: var(--ev-text-muted);
+  margin-bottom: 0;
+}
+
+/* ---------- Hero Section (Home) ---------- */
+.ev-hero {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+  color: #ffffff;
+  border-radius: var(--ev-radius);
+  padding: 3.5rem 2rem;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.ev-hero::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(37, 99, 235, 0) 70%);
+  pointer-events: none;
+}
+
+.ev-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #a7f3d0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  margin-bottom: 1.25rem;
+}
+
+.ev-hero-title {
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.ev-hero-subtitle {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 1.15rem;
+  max-width: 680px;
+  line-height: 1.6;
+}
+
+/* ---------- Ticket / Booking Cards ---------- */
+.ev-ticket-card {
+  max-width: 560px;
+  margin: 0 auto;
+  background: var(--ev-surface);
+  border: 1px solid var(--ev-border);
+  border-radius: var(--ev-radius);
+  box-shadow: var(--ev-shadow);
+  overflow: hidden;
+}
+
+.ev-ticket-header {
+  background: linear-gradient(135deg, var(--ev-primary) 0%, var(--ev-primary-dark) 100%);
+  color: #fff;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ev-ticket-body {
+  padding: 1.75rem;
+}
+
+.ev-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px dashed var(--ev-border);
+}
+
+.ev-meta-row:last-child {
+  border-bottom: none;
+}
+
+.ev-meta-label {
+  font-size: 0.88rem;
+  color: var(--ev-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ev-meta-value {
+  font-weight: 600;
+  color: var(--ev-text);
+  font-size: 0.95rem;
+}
+
+/* ---------- Leaflet Custom Styling ---------- */
+.leaflet-popup-content-wrapper {
+  border-radius: var(--ev-radius-sm) !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25) !important;
+  font-family: var(--ev-font) !important;
+  padding: 4px;
+}
+
+.leaflet-popup-content {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 12px 14px !important;
+}
+
+.leaflet-popup-content strong {
+  color: var(--ev-primary);
+  font-size: 1rem;
+}
+
+.leaflet-container {
+  font-family: var(--ev-font) !important;
+}

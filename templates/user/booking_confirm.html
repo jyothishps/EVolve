@@ -1,22 +1,60 @@
 {% extends 'base.html' %}
-{% block title %}Confirm Booking{% endblock %}
+{% block title %}Confirm Booking - EV Charge Booking{% endblock %}
 
 {% block content %}
-<h2>Confirm Your Booking</h2>
+<div class="text-center mb-4">
+    <div class="ev-page-header mb-0">
+        <h2>Confirm Your Booking</h2>
+        <p><i class="bi bi-shield-check me-1 text-success"></i>Please review your charging slot details before reserving</p>
+    </div>
+</div>
 
-<div class="card shadow-sm mt-3" style="max-width: 500px;">
-    <div class="card-body">
-        <p><strong>Station:</strong> {{ slot.station.name }} ({{ slot.station.station_code }})</p>
-        <p><strong>Address:</strong> {{ slot.station.address }}</p>
-        <p><strong>Charger:</strong> #{{ slot.charger.id }} - {{ slot.charger.charging_power_kW }} kW ({{ slot.charger.connector_type }})</p>
-        <p><strong>Date:</strong> {{ slot.date }}</p>
-        <p><strong>Time:</strong> {{ slot.start_time }} - {{ slot.end_time }}</p>
+<div class="ev-ticket-card shadow-sm">
+    <div class="ev-ticket-header">
+        <div>
+            <h5 class="mb-0 fw-bold text-white">Slot Reservation</h5>
+            <small class="text-white-50">Single EV Charging Window</small>
+        </div>
+        <span class="badge bg-success-subtle text-success px-3 py-2 fw-semibold">
+            <i class="bi bi-unlock-fill me-1"></i> Available
+        </span>
+    </div>
+    <div class="ev-ticket-body">
+        <div class="ev-meta-row">
+            <span class="ev-meta-label"><i class="bi bi-ev-station text-primary"></i> Station</span>
+            <span class="ev-meta-value">{{ slot.station.name }} ({{ slot.station.station_code }})</span>
+        </div>
+        <div class="ev-meta-row">
+            <span class="ev-meta-label"><i class="bi bi-geo-alt text-danger"></i> Location</span>
+            <span class="ev-meta-value text-end">{{ slot.station.address }}</span>
+        </div>
+        <div class="ev-meta-row">
+            <span class="ev-meta-label"><i class="bi bi-lightning-charge text-warning"></i> Charger Spec</span>
+            <span class="ev-meta-value">Charger #{{ slot.charger.id }} &bull; {{ slot.charger.charging_power_kW }} kW ({{ slot.charger.connector_type }})</span>
+        </div>
+        <div class="ev-meta-row">
+            <span class="ev-meta-label"><i class="bi bi-calendar-event text-info"></i> Reserved Date</span>
+            <span class="ev-meta-value">{{ slot.date }}</span>
+        </div>
+        <div class="ev-meta-row">
+            <span class="ev-meta-label"><i class="bi bi-clock-history text-secondary"></i> Time Slot</span>
+            <span class="ev-meta-value text-primary fw-bold">{{ slot.start_time }} - {{ slot.end_time }}</span>
+        </div>
 
-        <form method="post" class="mt-3">
+        <div class="alert alert-light border small text-muted mt-3 mb-0 d-flex align-items-center gap-2">
+            <i class="bi bi-info-circle text-primary"></i>
+            <span>This slot will be locked immediately upon confirmation to prevent double-booking.</span>
+        </div>
+
+        <form method="post" class="mt-4 d-grid gap-2">
             {% csrf_token %}
-            <button type="submit" class="btn btn-success">Confirm Booking</button>
-            <a href="{% url 'core:driver_station_detail' slot.station.id %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-success btn-lg fw-bold d-flex align-items-center justify-content-center gap-2">
+                <i class="bi bi-check-circle-fill"></i> Confirm & Reserve Slot
+            </button>
+            <a href="{% url 'core:driver_station_detail' slot.station.id %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle me-1"></i> Cancel & Return
+            </a>
         </form>
     </div>
 </div>
-{% endblock %}
+{% endblock %}

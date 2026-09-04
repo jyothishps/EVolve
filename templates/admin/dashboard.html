@@ -2,47 +2,70 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<h2>Admin Dashboard</h2>
-<p class="text-muted">Logged in as {{ request.user.username }} ({{ request.user.role }})</p>
 
-<div class="row g-3 mt-2">
-    <div class="col-md-4">
+<div class="ev-page-header">
+    <h2>Admin Dashboard</h2>
+    <p><i class="bi bi-person-badge me-1"></i>Logged in as {{ request.user.username }} ({{ request.user.role }})</p>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-sm-6 col-lg-3">
         <a href="{% url 'core:station_list' %}" class="text-decoration-none">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5>Manage Stations</h5>
+            <div class="card ev-hover h-100">
+                <div class="card-body text-center py-4">
+                    <div class="ev-stat-icon bg-primary-soft mx-auto mb-3">
+                        <i class="bi bi-ev-station"></i>
+                    </div>
+                    <h5 class="mb-1">Manage Stations</h5>
+                    <p class="text-muted small mb-0">Add, edit, remove stations</p>
                 </div>
             </div>
         </a>
     </div>
-    <div class="col-md-4">
+    <div class="col-sm-6 col-lg-3">
         <a href="{% url 'core:charger_list' %}" class="text-decoration-none">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5>Manage Chargers</h5>
+            <div class="card ev-hover h-100">
+                <div class="card-body text-center py-4">
+                    <div class="ev-stat-icon bg-accent-soft mx-auto mb-3">
+                        <i class="bi bi-lightning-charge"></i>
+                    </div>
+                    <h5 class="mb-1">Manage Chargers</h5>
+                    <p class="text-muted small mb-0">Configure charger units</p>
                 </div>
             </div>
         </a>
     </div>
-    <div class="col-md-4">
+    <div class="col-sm-6 col-lg-3">
         <a href="{% url 'core:slot_list' %}" class="text-decoration-none">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5>Manage Slots</h5>
+            <div class="card ev-hover h-100">
+                <div class="card-body text-center py-4">
+                    <div class="ev-stat-icon bg-warning-soft mx-auto mb-3">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <h5 class="mb-1">Manage Slots</h5>
+                    <p class="text-muted small mb-0">Set up time slots</p>
                 </div>
             </div>
         </a>
     </div>
-        <div class="col-md-4">
+    <div class="col-sm-6 col-lg-3">
         <a href="{% url 'core:admin_booking_list' %}" class="text-decoration-none">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5>Manage Bookings</h5>
+            <div class="card ev-hover h-100">
+                <div class="card-body text-center py-4">
+                    <div class="ev-stat-icon bg-danger-soft mx-auto mb-3">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <h5 class="mb-1">Manage Bookings</h5>
+                    <p class="text-muted small mb-0">Review all bookings</p>
                 </div>
             </div>
         </a>
     </div>
 </div>
 
-<p class="mt-4 text-muted">Booking management, charging sessions, and analytics will be added in later phases.</p>
-{% endblock %}
+<div class="alert alert-light border mt-4 d-flex align-items-center gap-2">
+    <i class="bi bi-info-circle text-muted"></i>
+    <span class="text-muted mb-0">Charging session tracking and ML-based load prediction analytics will be added in later phases.</span>
+</div>
+
+{% endblock %} 

@@ -1,41 +1,108 @@
 {% extends 'base.html' %}
-
 {% block title %}Home - EV Charging Slot Booking System{% endblock %}
 
 {% block content %}
-<div class="text-center p-5 bg-light rounded-3">
-    <h1 class="display-5 fw-bold">EV Charging Slot Booking System</h1>
-    <p class="col-lg-8 mx-auto fs-5">
-        Find charging stations, view real-time availability, and book your slot in advance.
-        Powered by machine learning based load prediction for smarter charging decisions.
+<!-- Hero Section -->
+<div class="ev-hero text-center mb-5">
+    <div class="ev-hero-badge mx-auto">
+        <i class="bi bi-lightning-charge-fill text-warning"></i> Smart EV Charging & Load Prediction
+    </div>
+    <h1 class="ev-hero-title mb-3">Smarter Charging for a Greener Tomorrow</h1>
+    <p class="ev-hero-subtitle mx-auto mb-4">
+        Locate nearby charging hubs, monitor live connector availability, and reserve your time slot in advance to bypass queues.
     </p>
-    <p class="text-muted">Login and registration will be added in Phase 2.</p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a href="{% url 'core:driver_station_list' %}" class="btn btn-primary btn-lg px-4 shadow-sm">
+            <i class="bi bi-geo-alt me-1"></i> Browse Stations
+        </a>
+        {% if user.is_authenticated %}
+            {% if user.is_admin %}
+            <a href="{% url 'core:admin_dashboard' %}" class="btn btn-outline-light btn-lg px-4">
+                <i class="bi bi-speedometer2 me-1"></i> Admin Dashboard
+            </a>
+            {% else %}
+            <a href="{% url 'core:driver_dashboard' %}" class="btn btn-outline-light btn-lg px-4">
+                <i class="bi bi-speedometer2 me-1"></i> My Dashboard
+            </a>
+            {% endif %}
+        {% else %}
+            <a href="{% url 'core:register' %}" class="btn btn-success btn-lg px-4 shadow-sm">
+                <i class="bi bi-person-plus me-1"></i> Get Started
+            </a>
+            <a href="{% url 'core:login' %}" class="btn btn-outline-light btn-lg px-4">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+            </a>
+        {% endif %}
+    </div>
 </div>
 
-<div class="row mt-5 g-4">
+<!-- Features Section -->
+<div class="text-center mb-4">
+    <h3 class="fw-bold mb-1">Key Features</h3>
+    <p class="text-muted">Engineered for seamless charging experiences and station efficiency</p>
+</div>
+
+<div class="row g-4 mb-5">
     <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
+        <div class="card ev-hover h-100 p-3">
             <div class="card-body text-center">
-                <h5 class="card-title">Find Stations</h5>
-                <p class="card-text">Browse charging stations near you on an interactive map.</p>
+                <div class="ev-stat-icon bg-primary-soft mx-auto mb-3">
+                    <i class="bi bi-map-fill"></i>
+                </div>
+                <h5 class="card-title fw-bold">Live Interactive Map</h5>
+                <p class="card-text text-muted">
+                    Explore charging hubs across the map, view connector types, and get instant directions to active stations.
+                </p>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
+        <div class="card ev-hover h-100 p-3">
             <div class="card-body text-center">
-                <h5 class="card-title">Book Slots</h5>
-                <p class="card-text">Reserve a charging slot in advance and avoid the wait.</p>
+                <div class="ev-stat-icon bg-accent-soft mx-auto mb-3">
+                    <i class="bi bi-calendar-check-fill"></i>
+                </div>
+                <h5 class="card-title fw-bold">Guaranteed Slot Booking</h5>
+                <p class="card-text text-muted">
+                    Reserve chargers ahead of time with zero double-booking risk and receive instant confirmations.
+                </p>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
+        <div class="card ev-hover h-100 p-3">
             <div class="card-body text-center">
-                <h5 class="card-title">Smart Predictions</h5>
-                <p class="card-text">ML-based load prediction helps you pick the least crowded slot.</p>
+                <div class="ev-stat-icon bg-warning-soft mx-auto mb-3">
+                    <i class="bi bi-cpu-fill"></i>
+                </div>
+                <h5 class="card-title fw-bold">Predictive AI Insights</h5>
+                <p class="card-text text-muted">
+                    ML-based station load forecasting anticipates peak hours to recommend optimal, wait-free charging times.
+                </p>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
+
+<!-- 3-Step Workflow -->
+<div class="card bg-white p-4 p-md-5 mb-4">
+    <h4 class="fw-bold text-center mb-4">How It Works in 3 Simple Steps</h4>
+    <div class="row g-4 text-center">
+        <div class="col-md-4">
+            <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width: 44px; height: 44px; font-weight: 700;">1</div>
+            <h6 class="fw-bold">Pick Your Station</h6>
+            <p class="text-muted small mb-0">Browse through active stations or locate them on our interactive Leaflet map.</p>
+        </div>
+        <div class="col-md-4">
+            <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width: 44px; height: 44px; font-weight: 700;">2</div>
+            <h6 class="fw-bold">Choose Date & Slot</h6>
+            <p class="text-muted small mb-0">Select an available charger and time slot that fits your travel plan.</p>
+        </div>
+        <div class="col-md-4">
+            <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width: 44px; height: 44px; font-weight: 700;">3</div>
+            <h6 class="fw-bold">Plug In & Charge</h6>
+            <p class="text-muted small mb-0">Arrive at your reserved time and enjoy hassle-free, uninterrupted charging.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

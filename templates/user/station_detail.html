@@ -1,70 +1,140 @@
 {% extends 'base.html' %}
-{% block title %}{{ station.name }}{% endblock %}
+{% block title %}{{ station.name }} - Station Details{% endblock %}
 
 {% block content %}
-<h2>{{ station.name }} ({{ station.station_code }})</h2>
-<p class="text-muted">{{ station.address }}</p>
-<p><strong>Status:</strong> <span class="badge bg-success">{{ station.status }}</span></p>
-<p><strong>Location Type:</strong> {{ station.location_type|default:"N/A" }}</p>
-<p>{{ station.description }}</p>
+<!-- Station Overview Banner -->
+<div class="card mb-4 bg-white shadow-sm border-0">
+    <div class="card-body p-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    <span class="badge bg-light text-dark border fw-semibold">{{ station.station_code }}</span>
+                    <span class="ev-badge {% if station.status == 'Active' %}active{% elif station.status == 'Maintenance' %}maintenance{% else %}inactive{% endif %}">
+                        <span class="ev-badge-dot"></span> {{ station.status }}
+                    </span>
+                    {% if station.location_type %}
+                    <span class="badge bg-secondary-subtle text-secondary border">
+                        <i class="bi bi-tag me-1"></i>{{ station.location_type }}
+                    </span>
+                    {% endif %}
+                </div>
+                <h2 class="fw-bold mb-2">{{ station.name }}</h2>
+                <p class="text-muted mb-2">
+                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ station.address }}
+                </p>
+                {% if station.description %}
+                <p class="text-secondary small mb-0">{{ station.description }}</p>
+                {% endif %}
+            </div>
+            <div class="text-md-end">
+                <a href="{% url 'core:driver_station_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Stations
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 
-<hr>
+<!-- Chargers Section -->
+<div class="mb-4">
+    <h4 class="fw-bold mb-3 d-flex align-items-center gap-2">
+        <i class="bi bi-lightning-charge text-warning"></i> Station Chargers
+    </h4>
+    <div class="ev-table-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Charger</th>
+                        <th>Power Capacity</th>
+                        <th>Connector Standard</th>
+                        <th>Live Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for charger in chargers %}
+                    <tr>
+                        <td>
+                            <strong>Charger #{{ charger.id }}</strong>
+                        </td>
+                        <td>
+                            <span class="fw-semibold text-primary">{{ charger.charging_power_kW }} kW</span>
+                            {% if charger.charging_power_kW >= 50 %}
+                            <span class="badge bg-warning-subtle text-warning-emphasis border ms-1">DC Fast</span>
+                            {% else %}
+                            <span class="badge bg-info-subtle text-info-emphasis border ms-1">AC Standard</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <i class="bi bi-plug-fill text-secondary me-1"></i>{{ charger.connector_type }}
+                        </td>
+                        <td>
+                            <span class="ev-badge {% if charger.status == 'Available' %}available{% elif charger.status == 'Occupied' %}pending{% else %}unavailable{% endif %}">
+                                <span class="ev-badge-dot"></span> {{ charger.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">
+                            <i class="bi bi-info-circle me-1"></i> No chargers configured for this station yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-<h4>Chargers</h4>
-<table class="table table-bordered bg-white">
-    <thead class="table-dark">
-        <tr>
-            <th>ID</th>
-            <th>Power (kW)</th>
-            <th>Connector Type</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for charger in chargers %}
-        <tr>
-            <td>{{ charger.id }}</td>
-            <td>{{ charger.charging_power_kW }}</td>
-            <td>{{ charger.connector_type }}</td>
-            <td>
-                <span class="badge bg-{% if charger.status == 'Available' %}success{% elif charger.status == 'Occupied' %}warning{% else %}secondary{% endif %}">
-                    {{ charger.status }}
-                </span>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4" class="text-center text-muted">No chargers configured for this station.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<hr>
-
-<h4>Available Slots</h4>
-<table class="table table-bordered bg-white">
-    <thead class="table-dark">
-        <tr>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Charger</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for slot in available_slots %}
-        <tr>
-            <td>{{ slot.date }}</td>
-            <td>{{ slot.start_time }} - {{ slot.end_time }}</td>
-            <td>Charger #{{ slot.charger.id }} ({{ slot.charger.charging_power_kW }} kW)</td>
-            <td>
-                <a href="{% url 'core:booking_create' slot.id %}" class="btn btn-sm btn-primary">Book</a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4" class="text-center text-muted">No available slots right now.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<a href="{% url 'core:driver_station_list' %}" class="btn btn-secondary">Back to Stations</a>
-{% endblock %}
+<!-- Available Slots Section -->
+<div class="mb-4">
+    <h4 class="fw-bold mb-3 d-flex align-items-center gap-2">
+        <i class="bi bi-clock-history text-primary"></i> Available Booking Slots
+    </h4>
+    <div class="ev-table-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time Window</th>
+                        <th>Charger Unit</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for slot in available_slots %}
+                    <tr>
+                        <td>
+                            <i class="bi bi-calendar3 text-muted me-1"></i>
+                            <strong>{{ slot.date }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                <i class="bi bi-clock me-1"></i>{{ slot.start_time }} - {{ slot.end_time }}
+                            </span>
+                        </td>
+                        <td>
+                            Charger #{{ slot.charger.id }}
+                            <small class="text-muted">({{ slot.charger.charging_power_kW }} kW)</small>
+                        </td>
+                        <td>
+                            <a href="{% url 'core:booking_create' slot.id %}" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1">
+                                <i class="bi bi-calendar-plus"></i> Book Slot
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">
+                            <i class="bi bi-calendar-x me-1"></i> No available slots for booking right now. Please check back later or view other stations.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

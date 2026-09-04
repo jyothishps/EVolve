@@ -7,8 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}EV Charging Slot Booking System{% endblock %}</title>
 
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
     <!-- Custom CSS -->
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
@@ -16,39 +24,53 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body>
+<body class="d-flex flex-column min-vh-100">
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark ev-navbar">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'core:home' %}">EV Charge Booking</a>
+            <a class="navbar-brand" href="{% url 'core:home' %}">
+                <i class="bi bi-ev-front-fill"></i> EV Charge Booking
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navMenu">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:home' %}">Home</a>
+                        <a class="nav-link" href="{% url 'core:home' %}">
+                            <i class="bi bi-house-door me-1"></i>Home
+                        </a>
                     </li>
                     {% if user.is_authenticated %}
                     {% if user.is_admin %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:admin_dashboard' %}">Admin Dashboard</a>
+                        <a class="nav-link" href="{% url 'core:admin_dashboard' %}">
+                            <i class="bi bi-speedometer2 me-1"></i>Admin Dashboard
+                        </a>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:driver_dashboard' %}">My Dashboard</a>
+                        <a class="nav-link" href="{% url 'core:driver_dashboard' %}">
+                            <i class="bi bi-speedometer2 me-1"></i>My Dashboard
+                        </a>
                     </li>
                     {% endif %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:logout' %}">Logout ({{ user.username }})</a>
+                    <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                        <a class="btn-nav-logout d-inline-flex align-items-center" href="{% url 'core:logout' %}">
+                            <i class="bi bi-box-arrow-right me-1"></i>Logout ({{ user.username }})
+                        </a>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:login' %}">Login</a>
+                        <a class="nav-link" href="{% url 'core:login' %}">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:register' %}">Register</a>
+                        <a class="nav-link" href="{% url 'core:register' %}">
+                            <i class="bi bi-person-plus me-1"></i>Register
+                        </a>
                     </li>
                     {% endif %}
                 </ul>
@@ -60,8 +82,17 @@
     <div class="container mt-3">
         {% if messages %}
         {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm" role="alert">
+            {% if message.tags == 'success' %}
+                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+            {% elif message.tags == 'error' or message.tags == 'danger' %}
+                <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+            {% elif message.tags == 'warning' %}
+                <i class="bi bi-exclamation-circle-fill text-warning fs-5"></i>
+            {% else %}
+                <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+            {% endif %}
+            <div class="flex-grow-1">{{ message }}</div>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         {% endfor %}
@@ -69,12 +100,12 @@
     </div>
 
     <!-- Page content -->
-    <main class="container my-4">
+    <main class="container my-4 flex-grow-1">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="bg-dark text-light text-center py-3 mt-5">
+    <footer class="ev-footer text-center py-3 mt-auto">
         <p class="mb-0">EV Charging Slot Booking System &copy; 2026 | MCA Project</p>
     </footer>
 

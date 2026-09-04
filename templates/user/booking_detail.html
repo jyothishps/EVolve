@@ -1,34 +1,73 @@
 {% extends 'base.html' %}
-{% block title %}Booking Details{% endblock %}
+{% block title %}Booking #{{ booking.id }} - EV Charge Booking{% endblock %}
 
 {% block content %}
-<h2>Booking #{{ booking.id }}</h2>
-
-<div class="card shadow-sm mt-3" style="max-width: 500px;">
-    <div class="card-body">
-        <p><strong>Station:</strong> {{ booking.station.name }} ({{ booking.station.station_code }})</p>
-        <p><strong>Charger:</strong> #{{ booking.charger.id }} - {{ booking.charger.charging_power_kW }} kW</p>
-        <p><strong>Date:</strong> {{ booking.booking_date }}</p>
-        <p><strong>Time:</strong> {{ booking.booking_time }}</p>
-        <p><strong>Status:</strong>
-            <span class="badge bg-{% if booking.status == 'Confirmed' %}success{% elif booking.status == 'Pending' %}warning{% elif booking.status == 'Completed' %}info{% else %}secondary{% endif %}">
-                {{ booking.status }}
-            </span>
-        </p>
-        <p class="text-muted"><small>Booked on {{ booking.created_at }}</small></p>
-
-        {% if confirm_cancel %}
-            <div class="alert alert-warning">Are you sure you want to cancel this booking?</div>
-            <form method="post" action="{% url 'core:booking_cancel' booking.id %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Yes, Cancel Booking</button>
-                <a href="{% url 'core:booking_detail' booking.id %}" class="btn btn-secondary">No, Go Back</a>
-            </form>
-        {% elif booking.status == 'Confirmed' or booking.status == 'Pending' %}
-            <a href="{% url 'core:booking_cancel' booking.id %}" class="btn btn-outline-danger">Cancel Booking</a>
-        {% endif %}
-
-        <a href="{% url 'core:booking_list' %}" class="btn btn-secondary mt-2">Back to My Bookings</a>
+<div class="text-center mb-4">
+    <div class="ev-page-header mb-0">
+        <h2>Booking Reservation Pass</h2>
+        <p><i class="bi bi-qr-code-scan me-1 text-primary"></i>Show this pass when arriving at the charging station</p>
     </div>
 </div>
-{% endblock %}
+
+<div class="ev-ticket-card shadow-sm">
+    <div class="ev-ticket-header">
+        <div>
+            <h5 class="mb-0 fw-bold text-white">Booking Pass #{{ booking.id }}</h5>
+            <small class="text-white-50">Reserved on {{ booking.created_at|date:"M d, Y H:i" }}</small>
+        </div>
+        <span class="ev-badge {% if booking.status == 'Confirmed' %}confirmed{% elif booking.status == 'Pending' %}pending{% elif booking.status == 'Completed' %}available{% else %}cancelled{% endif %} px-3 py-2">
+            <span class="ev-badge-dot"></span> {{ booking.status }}
+        </span>
+    </div>
+    <div class="ev-ticket-body">
+        <div class="ev-meta-row">
+            <span class="ev-meta-label"><i class="bi bi-ev-station text-primary"></i> Station</span>
+            <span class="ev-meta-value">{{ booking.station.name }} ({{ booking.station.station_code }})</span>
+        </div>
+        <div class="ev-meta-row">
+            <span class="ev-meta-label"><i class="bi bi-geo-alt text-danger"></i> Location</span>
+            <span class="ev-meta-value text-end">{{ booking.station.address }}</span>
+        </div>
+        <div class="ev-meta-row">
+            <span class="ev-meta-label"><i class="bi bi-lightning-charge text-warning"></i> Charger Spec</span>
+            <span class="ev-meta-value">Charger #{{ booking.charger.id }} &bull; {{ booking.charger.charging_power_kW }} kW</span>
+        </div>
+        <div class="ev-meta-row">
+            <span class="ev-meta-label"><i class="bi bi-calendar-event text-info"></i> Reserved Date</span>
+            <span class="ev-meta-value">{{ booking.booking_date }}</span>
+        </div>
+        <div class="ev-meta-row">
+            <span class="ev-meta-label"><i class="bi bi-clock-history text-secondary"></i> Time Slot</span>
+            <span class="ev-meta-value text-primary fw-bold">{{ booking.booking_time }}</span>
+        </div>
+
+        {% if confirm_cancel %}
+            <div class="alert alert-warning border mt-4">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                <strong>Are you sure you want to cancel this reservation?</strong>
+                <div class="small mt-1">This will immediately release the slot for other EV drivers.</div>
+            </div>
+            <form method="post" action="{% url 'core:booking_cancel' booking.id %}" class="d-grid gap-2 mt-3">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-lg fw-bold">
+                    <i class="bi bi-trash3-fill me-1"></i> Yes, Cancel Reservation
+                </button>
+                <a href="{% url 'core:booking_detail' booking.id %}" class="btn btn-outline-secondary">
+                    No, Keep My Booking
+                </a>
+            </form>
+        {% else %}
+            <div class="d-grid gap-2 mt-4">
+                {% if booking.status == 'Confirmed' or booking.status == 'Pending' %}
+                <a href="{% url 'core:booking_cancel' booking.id %}" class="btn btn-outline-danger">
+                    <i class="bi bi-x-circle me-1"></i> Cancel Reservation
+                </a>
+                {% endif %}
+                <a href="{% url 'core:booking_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to My Bookings
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
