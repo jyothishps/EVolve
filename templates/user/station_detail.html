@@ -57,7 +57,7 @@
             <td>{{ slot.start_time }} - {{ slot.end_time }}</td>
             <td>Charger #{{ slot.charger.id }} ({{ slot.charger.charging_power_kW }} kW)</td>
             <td>
-                <button class="btn btn-sm btn-primary" disabled title="Booking added in Phase 6">Book</button>
+                <a href="{% url 'core:booking_create' slot.id %}" class="btn btn-sm btn-primary">Book</a>
             </td>
         </tr>
         {% empty %}

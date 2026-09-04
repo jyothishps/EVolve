@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}My Bookings{% endblock %}
+
+{% block content %}
+<h2>My Bookings</h2>
+
+<table class="table table-bordered table-hover bg-white">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Station</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for booking in bookings %}
+        <tr>
+            <td>{{ booking.id }}</td>
+            <td>{{ booking.station.name }}</td>
+            <td>{{ booking.booking_date }}</td>
+            <td>{{ booking.booking_time }}</td>
+            <td>
+                <span class="badge bg-{% if booking.status == 'Confirmed' %}success{% elif booking.status == 'Pending' %}warning{% elif booking.status == 'Completed' %}info{% else %}secondary{% endif %}">
+                    {{ booking.status }}
+                </span>
+            </td>
+            <td>
+                <a href="{% url 'core:booking_detail' booking.id %}" class="btn btn-sm btn-outline-primary">View</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted">No bookings yet.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

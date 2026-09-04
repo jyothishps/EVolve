@@ -29,9 +29,18 @@ urlpatterns = [
     path('manage/slots/<int:slot_id>/edit/', views.slot_edit, name='slot_edit'),
     path('manage/slots/<int:slot_id>/delete/', views.slot_delete, name='slot_delete'),
 
-
     # Driver station browsing
     path('stations/', views.driver_station_list, name='driver_station_list'),
     path('stations/<int:station_id>/', views.driver_station_detail, name='driver_station_detail'),
     path('stations/map/view/', views.driver_station_map, name='driver_station_map'),
+
+        # Booking - driver
+    path('bookings/create/<int:slot_id>/', views.booking_create, name='booking_create'),
+    path('bookings/', views.booking_list, name='booking_list'),
+    path('bookings/<int:booking_id>/', views.booking_detail, name='booking_detail'),
+    path('bookings/<int:booking_id>/cancel/', views.booking_cancel, name='booking_cancel'),
+
+    # Booking - admin
+    path('manage/bookings/', views.admin_booking_list, name='admin_booking_list'),
+    path('manage/bookings/<int:booking_id>/update/', views.admin_booking_update_status, name='admin_booking_update_status'),
 ]

@@ -10,6 +10,9 @@ from .forms import StationForm, ChargerForm, ChargingSlotForm
 from .models import Station, Charger, ChargingSlot
 from .forms import DriverRegisterForm
 from .forms import DriverRegisterForm, StyledAuthenticationForm
+from django.db import transaction, IntegrityError
+from django.utils import timezone
+from .models import Booking
 
 def home(request):
     context = {
@@ -209,3 +212,153 @@ def driver_station_map(request):
     """
     stations = Station.objects.filter(status='Active')
     return render(request, 'user/station_map.html', {'stations': stations})
+
+
+# ---------- BOOKING SYSTEM (DRIVER) ----------
+
+@login_required
+def booking_create(request, slot_id):
+    """
+    Show confirmation page and create booking on POST.
+    Uses transaction + row lock to prevent double booking.
+    """
+    slot = get_object_or_404(ChargingSlot, id=slot_id)
+
+    if request.user.is_admin():
+        messages.error(request, 'Admins cannot make bookings.')
+        return redirect('core:admin_dashboard')
+
+    # Reject past slots
+    if slot.date < timezone.localdate():
+        messages.error(request, 'Cannot book a slot in the past.')
+        return redirect('core:driver_station_detail', station_id=slot.station.id)
+
+    # Reject inactive station or unavailable charger
+    if slot.station.status != 'Active':
+        messages.error(request, 'This station is not currently active.')
+        return redirect('core:driver_station_list')
+
+    if slot.charger.status not in ['Available']:
+        messages.error(request, 'Selected charger is not available.')
+        return redirect('core:driver_station_detail', station_id=slot.station.id)
+
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Lock the slot row to prevent race condition double booking
+                locked_slot = ChargingSlot.objects.select_for_update().get(id=slot.id)
+
+                if locked_slot.status != 'Available':
+                    messages.error(request, 'Sorry, this slot is no longer available.')
+                    return redirect('core:driver_station_detail', station_id=slot.station.id)
+
+                booking = Booking.objects.create(
+                    user=request.user,
+                    station=locked_slot.station,
+                    charger=locked_slot.charger,
+                    slot=locked_slot,
+                    booking_date=locked_slot.date,
+                    booking_time=locked_slot.start_time,
+                    status='Confirmed',
+                )
+
+                locked_slot.status = 'Reserved'
+                locked_slot.save()
+
+            messages.success(request, 'Booking confirmed successfully.')
+            return redirect('core:booking_detail', booking_id=booking.id)
+
+        except IntegrityError:
+            messages.error(request, 'This slot was already booked. Please choose another.')
+            return redirect('core:driver_station_detail', station_id=slot.station.id)
+
+    return render(request, 'user/booking_confirm.html', {'slot': slot})
+
+
+@login_required
+def booking_list(request):
+    """
+    Driver: view own booking history.
+    """
+    bookings = Booking.objects.filter(user=request.user).select_related(
+        'station', 'charger', 'slot'
+    ).order_by('-created_at')
+    return render(request, 'user/booking_list.html', {'bookings': bookings})
+
+
+@login_required
+def booking_detail(request, booking_id):
+    """
+    Driver: view details of a specific booking. Only owner can view.
+    """
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if booking.user != request.user and not request.user.is_admin():
+        messages.error(request, 'You are not authorized to view this booking.')
+        return redirect('core:booking_list')
+
+    return render(request, 'user/booking_detail.html', {'booking': booking})
+
+
+@login_required
+def booking_cancel(request, booking_id):
+    """
+    Driver: cancel own booking. Slot becomes Available again.
+    """
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if booking.user != request.user:
+        messages.error(request, 'You are not authorized to cancel this booking.')
+        return redirect('core:booking_list')
+
+    if booking.status in ['Cancelled', 'Completed']:
+        messages.error(request, f'Booking already {booking.status.lower()}, cannot cancel.')
+        return redirect('core:booking_detail', booking_id=booking.id)
+
+    if request.method == 'POST':
+        with transaction.atomic():
+            booking.cancel_booking()  # model method: sets Cancelled + slot Available
+        messages.success(request, 'Booking cancelled successfully.')
+        return redirect('core:booking_list')
+
+    return render(request, 'user/booking_detail.html', {'booking': booking, 'confirm_cancel': True})
+
+
+# ---------- BOOKING MANAGEMENT (ADMIN) ----------
+
+@admin_required
+def admin_booking_list(request):
+    """
+    Admin: view all bookings across all users.
+    """
+    bookings = Booking.objects.select_related('user', 'station', 'charger', 'slot').order_by('-created_at')
+    return render(request, 'admin/booking_list.html', {'bookings': bookings})
+
+
+@admin_required
+def admin_booking_update_status(request, booking_id):
+    """
+    Admin: update booking status manually (e.g. mark Confirmed/Cancelled).
+    """
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        valid_statuses = dict(Booking.STATUS_CHOICES).keys()
+
+        if new_status not in valid_statuses:
+            messages.error(request, 'Invalid status.')
+            return redirect('core:admin_booking_list')
+
+        with transaction.atomic():
+            booking.status = new_status
+            booking.save()
+
+            if new_status == 'Cancelled':
+                booking.slot.status = 'Available'
+                booking.slot.save()
+
+        messages.success(request, 'Booking status updated.')
+        return redirect('core:admin_booking_list')
+
+    return redirect('core:admin_booking_list')

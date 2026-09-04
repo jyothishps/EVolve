@@ -24,13 +24,14 @@
             </div>
         </a>
     </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm opacity-50">
-            <div class="card-body text-center">
-                <h5>My Bookings</h5>
-                <small class="text-muted">Added in Phase 6</small>
+        <div class="col-md-4">
+        <a href="{% url 'core:booking_list' %}" class="text-decoration-none">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5>My Bookings</h5>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 {% endblock %}

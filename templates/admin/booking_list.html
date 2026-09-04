@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Manage Bookings{% endblock %}
+
+{% block content %}
+<h2>All Bookings</h2>
+
+<table class="table table-bordered table-hover bg-white">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Station</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Update Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for booking in bookings %}
+        <tr>
+            <td>{{ booking.id }}</td>
+            <td>{{ booking.user.username }}</td>
+            <td>{{ booking.station.station_code }}</td>
+            <td>{{ booking.booking_date }}</td>
+            <td>{{ booking.booking_time }}</td>
+            <td>
+                <span class="badge bg-{% if booking.status == 'Confirmed' %}success{% elif booking.status == 'Pending' %}warning{% elif booking.status == 'Completed' %}info{% else %}secondary{% endif %}">
+                    {{ booking.status }}
+                </span>
+            </td>
+            <td>
+                <form method="post" action="{% url 'core:admin_booking_update_status' booking.id %}" class="d-flex gap-2">
+                    {% csrf_token %}
+                    <select name="status" class="form-select form-select-sm">
+                        {% for value, label in booking.STATUS_CHOICES %}
+                            <option value="{{ value }}" {% if booking.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary">Update</button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted">No bookings yet.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
