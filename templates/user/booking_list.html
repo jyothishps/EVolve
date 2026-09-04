@@ -31,18 +31,18 @@
                 {% for booking in bookings %}
                 <tr>
                     <td>
-                        <span class="fw-bold text-primary">#{{ booking.id }}</span>
+                        <span class="fw-bold" style="color: var(--ev-secondary);">#{{ booking.id }}</span>
                     </td>
                     <td>
-                        <strong>{{ booking.station.name }}</strong>
+                        <strong class="text-light">{{ booking.station.name }}</strong>
                         <div class="small text-muted">{{ booking.station.station_code }}</div>
                     </td>
                     <td>
                         <i class="bi bi-calendar-event text-muted me-1"></i>{{ booking.booking_date }}
                     </td>
                     <td>
-                        <span class="badge bg-light text-dark border">
-                            <i class="bi bi-clock me-1"></i>{{ booking.booking_time }}
+                        <span class="badge" style="background: var(--ev-surface-elevated); color: var(--ev-text-primary); border: 1px solid var(--ev-border);">
+                            <i class="bi bi-clock me-1 text-success"></i>{{ booking.booking_time }}
                         </span>
                     </td>
                     <td>

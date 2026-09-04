@@ -5,9 +5,32 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     #stationMap {
-        height: 520px;
+        height: 540px;
         width: 100%;
-        border-radius: var(--ev-radius);
+        border-radius: 0 0 var(--ev-radius) var(--ev-radius);
+    }
+    .custom-ev-marker {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .marker-pin {
+        width: 28px;
+        height: 28px;
+        background: #22c55e;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 14px rgba(34, 197, 94, 0.75), 0 3px 6px rgba(0, 0, 0, 0.6);
+        color: #09110d;
+        font-size: 13px;
+        transition: transform 0.2s ease;
+    }
+    .marker-pin:hover {
+        transform: scale(1.15);
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.95);
     }
 </style>
 {% endblock %}
@@ -16,7 +39,7 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div class="ev-page-header mb-0">
         <h2>Interactive Station Map</h2>
-        <p><i class="bi bi-geo-alt me-1"></i>Explore real-time charging locations. Click any marker for info.</p>
+        <p><i class="bi bi-geo-alt me-1 text-success"></i>Real-time geospatial network of active EV charging hubs</p>
     </div>
     <div>
         <a href="{% url 'core:driver_station_list' %}" class="btn btn-outline-secondary d-inline-flex align-items-center">
@@ -25,21 +48,21 @@
     </div>
 </div>
 
-<div class="card shadow-sm border-0 overflow-hidden mb-4">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <span class="fw-semibold text-primary">
-            <i class="bi bi-broadcast me-1"></i> Active Network Stations
+<div class="card shadow-sm border overflow-hidden mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <span class="fw-semibold" style="color: var(--ev-accent);">
+            <i class="bi bi-broadcast me-2"></i> Active Network Stations
         </span>
-        <span class="badge bg-primary-subtle text-primary border">
-            {{ stations|length }} Station{{ stations|length|pluralize }} Online
+        <span class="ev-badge active">
+            <span class="ev-badge-dot"></span> {{ stations|length }} Hub{{ stations|length|pluralize }} Online
         </span>
     </div>
     <div class="card-body p-0">
         <div id="stationMap"></div>
     </div>
-    <div class="card-footer bg-light py-2 px-3 text-muted small d-flex align-items-center gap-2">
-        <i class="bi bi-info-circle"></i>
-        <span>Markers indicate verified fast and standard EV charging hubs. Tap a marker to view available chargers.</span>
+    <div class="card-footer py-2 px-3 small d-flex align-items-center gap-2">
+        <i class="bi bi-info-circle text-info"></i>
+        <span>Green markers show active fast & standard charging hubs. Tap a marker to inspect details & reserve slots.</span>
     </div>
 </div>
 {% endblock %}
@@ -49,10 +72,20 @@
 <script>
     var map = L.map('stationMap').setView([20.5937, 78.9629], 5);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
+    // CartoDB Dark Matter dark tile layer
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
         maxZoom: 19
     }).addTo(map);
+
+    var greenIcon = L.divIcon({
+        className: 'custom-ev-marker',
+        html: '<div class="marker-pin"><i class="bi bi-lightning-charge-fill"></i></div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        popupAnchor: [0, -14]
+    });
 
     var stations = [
         {% for station in stations %}
@@ -70,14 +103,16 @@
     ];
 
     stations.forEach(function(s) {
-        var marker = L.marker([s.lat, s.lng]).addTo(map);
+        var marker = L.marker([s.lat, s.lng], { icon: greenIcon }).addTo(map);
         var popupContent =
-            "<div class='p-1'>" +
-            "<h6 class='fw-bold mb-1'>" + s.name + "</h6>" +
-            "<span class='badge bg-light text-dark border mb-2'>" + s.code + "</span><br>" +
-            "<p class='small text-muted mb-2'><i class='bi bi-geo-alt me-1'></i>" + s.address + "</p>" +
-            "<p class='small mb-2'><i class='bi bi-ev-station me-1'></i><strong>" + s.chargers + "</strong> Charger(s)</p>" +
-            "<a href='" + s.url + "' class='btn btn-sm btn-primary w-100'>View Station & Slots</a>" +
+            "<div class='p-1' style='min-width: 180px;'>" +
+            "<div class='d-flex justify-content-between align-items-center mb-1'>" +
+            "<span class='badge' style='background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3);'>" + s.code + "</span>" +
+            "<span class='small text-muted'>" + s.chargers + " Charger(s)</span>" +
+            "</div>" +
+            "<h6 class='fw-bold mb-1' style='color: #ffffff;'>" + s.name + "</h6>" +
+            "<p class='small text-muted mb-2'><i class='bi bi-geo-alt me-1 text-danger'></i>" + s.address + "</p>" +
+            "<a href='" + s.url + "' class='btn btn-sm btn-primary w-100 fw-semibold'>View Hub & Slots</a>" +
             "</div>";
         marker.bindPopup(popupContent);
     });

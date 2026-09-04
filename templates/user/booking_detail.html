@@ -5,7 +5,7 @@
 <div class="text-center mb-4">
     <div class="ev-page-header mb-0">
         <h2>Booking Reservation Pass</h2>
-        <p><i class="bi bi-qr-code-scan me-1 text-primary"></i>Show this pass when arriving at the charging station</p>
+        <p><i class="bi bi-qr-code-scan me-1 text-success"></i>Show this pass when arriving at the charging station</p>
     </div>
 </div>
 
@@ -21,7 +21,7 @@
     </div>
     <div class="ev-ticket-body">
         <div class="ev-meta-row">
-            <span class="ev-meta-label"><i class="bi bi-ev-station text-primary"></i> Station</span>
+            <span class="ev-meta-label"><i class="bi bi-ev-station text-success"></i> Station</span>
             <span class="ev-meta-value">{{ booking.station.name }} ({{ booking.station.station_code }})</span>
         </div>
         <div class="ev-meta-row">
@@ -29,7 +29,7 @@
             <span class="ev-meta-value text-end">{{ booking.station.address }}</span>
         </div>
         <div class="ev-meta-row">
-            <span class="ev-meta-label"><i class="bi bi-lightning-charge text-warning"></i> Charger Spec</span>
+            <span class="ev-meta-label"><i class="bi bi-lightning-charge-fill text-warning"></i> Charger Spec</span>
             <span class="ev-meta-value">Charger #{{ booking.charger.id }} &bull; {{ booking.charger.charging_power_kW }} kW</span>
         </div>
         <div class="ev-meta-row">
@@ -38,7 +38,7 @@
         </div>
         <div class="ev-meta-row">
             <span class="ev-meta-label"><i class="bi bi-clock-history text-secondary"></i> Time Slot</span>
-            <span class="ev-meta-value text-primary fw-bold">{{ booking.booking_time }}</span>
+            <span class="ev-meta-value fw-bold" style="color: var(--ev-accent);">{{ booking.booking_time }}</span>
         </div>
 
         {% if confirm_cancel %}

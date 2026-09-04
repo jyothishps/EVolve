@@ -31,9 +31,9 @@
                 {% for station in stations %}
                 <tr>
                     <td>
-                        <span class="badge bg-light text-dark border fw-bold">{{ station.station_code }}</span>
+                        <span class="badge fw-bold" style="background: rgba(56, 189, 248, 0.12); color: var(--ev-secondary); border: 1px solid rgba(56, 189, 248, 0.25);">{{ station.station_code }}</span>
                     </td>
-                    <td><strong>{{ station.name }}</strong></td>
+                    <td><strong class="text-light">{{ station.name }}</strong></td>
                     <td><i class="bi bi-geo-alt text-muted me-1"></i>{{ station.address }}</td>
                     <td>
                         <span class="ev-badge {% if station.status == 'Active' %}active{% elif station.status == 'Maintenance' %}maintenance{% else %}inactive{% endif %}">
@@ -41,7 +41,7 @@
                         </span>
                     </td>
                     <td>
-                        <span class="badge bg-primary-subtle text-primary border">
+                        <span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.25);">
                             {{ station.number_of_chargers }} Unit{{ station.number_of_chargers|pluralize }}
                         </span>
                     </td>

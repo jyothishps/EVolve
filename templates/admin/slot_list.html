@@ -31,17 +31,17 @@
             <tbody>
                 {% for slot in slots %}
                 <tr>
-                    <td><strong>#{{ slot.id }}</strong></td>
+                    <td><strong style="color: var(--ev-secondary);">#{{ slot.id }}</strong></td>
                     <td>
-                        <span class="badge bg-light text-dark border">{{ slot.station.station_code }}</span>
+                        <span class="badge" style="background: rgba(56, 189, 248, 0.12); color: var(--ev-secondary); border: 1px solid rgba(56, 189, 248, 0.25);">{{ slot.station.station_code }}</span>
                     </td>
                     <td>Charger #{{ slot.charger.id }}</td>
                     <td>
                         <i class="bi bi-calendar-event text-muted me-1"></i>{{ slot.date }}
                     </td>
                     <td>
-                        <span class="badge bg-light text-dark border">
-                            <i class="bi bi-clock me-1"></i>{{ slot.start_time }} - {{ slot.end_time }}
+                        <span class="badge" style="background: var(--ev-surface-elevated); color: var(--ev-text-primary); border: 1px solid var(--ev-border);">
+                            <i class="bi bi-clock me-1 text-success"></i>{{ slot.start_time }} - {{ slot.end_time }}
                         </span>
                     </td>
                     <td>

@@ -30,18 +30,18 @@
             <tbody>
                 {% for charger in chargers %}
                 <tr>
-                    <td><strong>Charger #{{ charger.id }}</strong></td>
+                    <td><strong class="text-light">Charger #{{ charger.id }}</strong></td>
                     <td>
-                        <span class="badge bg-light text-dark border">{{ charger.station.station_code }}</span>
+                        <span class="badge" style="background: rgba(56, 189, 248, 0.12); color: var(--ev-secondary); border: 1px solid rgba(56, 189, 248, 0.25);">{{ charger.station.station_code }}</span>
                         <span class="ms-1 text-muted small">{{ charger.station.name }}</span>
                     </td>
                     <td>
-                        <span class="fw-semibold text-primary">{{ charger.charging_power_kW }} kW</span>
+                        <span class="fw-bold" style="color: var(--ev-accent);">{{ charger.charging_power_kW }} kW</span>
                         {% if charger.charging_power_kW >= 50 %}
-                        <span class="badge bg-warning-subtle text-warning-emphasis border ms-1">DC Fast</span>
+                        <span class="badge ms-1" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3);">DC Fast</span>
                         {% endif %}
                     </td>
-                    <td><i class="bi bi-plug-fill text-secondary me-1"></i>{{ charger.connector_type }}</td>
+                    <td><i class="bi bi-plug-fill text-muted me-1"></i>{{ charger.connector_type }}</td>
                     <td>
                         <span class="ev-badge {% if charger.status == 'Available' %}available{% elif charger.status == 'Occupied' %}pending{% else %}unavailable{% endif %}">
                             <span class="ev-badge-dot"></span> {{ charger.status }}
