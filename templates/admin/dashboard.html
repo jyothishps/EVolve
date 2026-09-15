@@ -30,5 +30,28 @@
             </div>
         </div>
     </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100 bg-white">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">
+                    <i class="bi bi-ev-station text-warning me-2"></i>Manage Stations
+                </h5>
+                <p class="card-text text-muted">View, edit, or delete existing charging stations.</p>
+                <a href="{% url 'core:station_list' %}" class="btn btn-outline-primary">Manage Stations</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100 bg-white">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">
+                    <i class="bi bi-lightning-charge text-danger me-2"></i>Manage Chargers
+                </h5>
+                <p class="card-text text-muted">Configure charger units, power ratings, and statuses.</p>
+                <a href="{% url 'core:charger_list' %}" class="btn btn-outline-primary">Manage Chargers</a>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

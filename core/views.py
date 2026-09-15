@@ -9,6 +9,11 @@ from .decorators import admin_required
 from .forms import StationForm, DriverRegisterForm, StyledAuthenticationForm
 from .models import Station
 
+from django.shortcuts import get_object_or_404
+from .decorators import admin_required
+from .models import Station, Charger
+from .forms import StationForm, ChargerForm
+
 
 def home(request):
     context = {
@@ -91,3 +96,71 @@ def driver_station_map(request):
     """
     stations = Station.objects.filter(status='Active')
     return render(request, 'user/station_map.html', {'stations': stations})
+
+
+# ---------- STATION MANAGEMENT (ADMIN) ----------
+
+@admin_required
+def station_list(request):
+    stations = Station.objects.all().order_by('station_code')
+    return render(request, 'admin/station_list.html', {'stations': stations})
+
+
+@admin_required
+def station_edit(request, station_id):
+    station = get_object_or_404(Station, id=station_id)
+    form = StationForm(request.POST or None, instance=station)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Station updated successfully.')
+        return redirect('core:station_list')
+    return render(request, 'admin/station_form.html', {'form': form, 'action': 'Edit'})
+
+
+@admin_required
+def station_delete(request, station_id):
+    station = get_object_or_404(Station, id=station_id)
+    if request.method == 'POST':
+        station.delete()
+        messages.success(request, 'Station deleted.')
+        return redirect('core:station_list')
+    return render(request, 'admin/station_confirm_delete.html', {'station': station})
+
+
+# ---------- CHARGER MANAGEMENT (ADMIN) ----------
+
+@admin_required
+def charger_list(request):
+    chargers = Charger.objects.select_related('station').order_by('station__station_code')
+    return render(request, 'admin/charger_list.html', {'chargers': chargers})
+
+
+@admin_required
+def charger_add(request):
+    form = ChargerForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Charger added successfully.')
+        return redirect('core:charger_list')
+    return render(request, 'admin/charger_form.html', {'form': form, 'action': 'Add'})
+
+
+@admin_required
+def charger_edit(request, charger_id):
+    charger = get_object_or_404(Charger, id=charger_id)
+    form = ChargerForm(request.POST or None, instance=charger)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Charger updated successfully.')
+        return redirect('core:charger_list')
+    return render(request, 'admin/charger_form.html', {'form': form, 'action': 'Edit'})
+
+
+@admin_required
+def charger_delete(request, charger_id):
+    charger = get_object_or_404(Charger, id=charger_id)
+    if request.method == 'POST':
+        charger.delete()
+        messages.success(request, 'Charger deleted.')
+        return redirect('core:charger_list')
+    return redirect('core:charger_list')

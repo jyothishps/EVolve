@@ -2,6 +2,7 @@
 {% block title %}Station Map{% endblock %}
 
 {% block extra_css %}
+<meta name="referrer" content="no-referrer">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     #stationMap {
@@ -52,9 +53,10 @@
 <script>
     var map = L.map('stationMap').setView([20.5937, 78.9629], 5);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        subdomains: ['a', 'b', 'c'],
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles by <a href="https://www.hotosm.org/" target="_blank">HOT</a>'
     }).addTo(map);
 
     var stations = [
@@ -88,14 +90,14 @@
         group = new L.featureGroup(stations.map(function(s) {
             return L.marker([s.lat, s.lng]);
         }));
-        map.fitBounds(group.getBounds().pad(0.2));
+        map.fitBounds(group.getBounds().pad(0.2), { maxZoom: 15 });
     }
 
     var resetBtn = document.getElementById('resetMapBtn');
     if (resetBtn) {
         resetBtn.addEventListener('click', function() {
             if (group && stations.length > 0) {
-                map.fitBounds(group.getBounds().pad(0.2));
+                map.fitBounds(group.getBounds().pad(0.2), { maxZoom: 15 });
             } else {
                 map.setView([20.5937, 78.9629], 5);
             }
