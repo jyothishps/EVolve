@@ -74,3 +74,21 @@ class ChargerForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs.update({'class': 'form-control'})
+
+from .models import ChargingSlot
+
+
+class ChargingSlotForm(forms.ModelForm):
+    class Meta:
+        model = ChargingSlot
+        fields = ['station', 'charger', 'date', 'start_time', 'end_time', 'status']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+            'start_time': forms.TimeInput(attrs={'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({'class': 'form-control'})

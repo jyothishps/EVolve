@@ -13,6 +13,8 @@ from django.shortcuts import get_object_or_404
 from .decorators import admin_required
 from .models import Station, Charger
 from .forms import StationForm, ChargerForm
+from .models import ChargingSlot
+from .forms import ChargingSlotForm
 
 
 def home(request):
@@ -164,3 +166,65 @@ def charger_delete(request, charger_id):
         messages.success(request, 'Charger deleted.')
         return redirect('core:charger_list')
     return redirect('core:charger_list')
+
+# ---------- SLOT MANAGEMENT (ADMIN) ----------
+
+@admin_required
+def slot_list(request):
+    slots = ChargingSlot.objects.select_related('station', 'charger').order_by('-date')
+    return render(request, 'admin/slot_list.html', {'slots': slots})
+
+
+@admin_required
+def slot_add(request):
+    form = ChargingSlotForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Slot created successfully.')
+        return redirect('core:slot_list')
+    return render(request, 'admin/slot_form.html', {'form': form, 'action': 'Add'})
+
+
+@admin_required
+def slot_edit(request, slot_id):
+    slot = get_object_or_404(ChargingSlot, id=slot_id)
+    form = ChargingSlotForm(request.POST or None, instance=slot)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Slot updated successfully.')
+        return redirect('core:slot_list')
+    return render(request, 'admin/slot_form.html', {'form': form, 'action': 'Edit'})
+
+
+@admin_required
+def slot_delete(request, slot_id):
+    slot = get_object_or_404(ChargingSlot, id=slot_id)
+    if request.method == 'POST':
+        slot.delete()
+        messages.success(request, 'Slot deleted.')
+        return redirect('core:slot_list')
+    return redirect('core:slot_list')
+
+
+# ---------- DRIVER STATION BROWSING ----------
+
+@login_required
+def driver_station_list(request):
+    stations = Station.objects.filter(status='Active').order_by('station_code')
+    return render(request, 'user/station_list.html', {'stations': stations})
+
+
+@login_required
+def driver_station_detail(request, station_id):
+    station = get_object_or_404(Station, id=station_id)
+    chargers = Charger.objects.filter(station=station)
+    available_slots = ChargingSlot.objects.filter(
+        station=station, status='Available'
+    ).order_by('date', 'start_time')
+
+    context = {
+        'station': station,
+        'chargers': chargers,
+        'available_slots': available_slots,
+    }
+    return render(request, 'user/station_detail.html', context)

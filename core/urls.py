@@ -25,4 +25,14 @@ urlpatterns = [
 
     # Driver station map
     path('stations/map/view/', views.driver_station_map, name='driver_station_map'),
+
+    # Slot management (admin)
+    path('manage/slots/', views.slot_list, name='slot_list'),
+    path('manage/slots/add/', views.slot_add, name='slot_add'),
+    path('manage/slots/<int:slot_id>/edit/', views.slot_edit, name='slot_edit'),
+    path('manage/slots/<int:slot_id>/delete/', views.slot_delete, name='slot_delete'),
+
+    # Driver station browsing
+    path('stations/', views.driver_station_list, name='driver_station_list'),
+    path('stations/<int:station_id>/', views.driver_station_detail, name='driver_station_detail'),
 ]
