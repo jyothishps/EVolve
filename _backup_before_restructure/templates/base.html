@@ -36,32 +36,32 @@
                         <a class="nav-link" href="{% url 'core:home' %}">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'stations:driver_station_map' %}">Station Map</a>
+                        <a class="nav-link" href="{% url 'core:driver_station_map' %}">Station Map</a>
                     </li>
                     {% if user.is_authenticated %}
                         {% if user.is_admin %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:admin_dashboard' %}">Admin Dashboard</a>
+                            <a class="nav-link" href="{% url 'core:admin_dashboard' %}">Admin Dashboard</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'stations:station_add' %}">Add Station</a>
+                            <a class="nav-link" href="{% url 'core:station_add' %}">Add Station</a>
                         </li>
                         {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:driver_dashboard' %}">Dashboard</a>
+                            <a class="nav-link" href="{% url 'core:driver_dashboard' %}">Dashboard</a>
                         </li>
                         {% endif %}
                         <li class="nav-item ms-lg-2">
-                            <a class="btn btn-sm btn-outline-light" href="{% url 'accounts:logout' %}">
+                            <a class="btn btn-sm btn-outline-light" href="{% url 'core:logout' %}">
                                 Logout ({{ user.username }})
                             </a>
                         </li>
                     {% else %}
                         <li class="nav-item ms-lg-2">
-                            <a class="nav-link" href="{% url 'accounts:login' %}">Login</a>
+                            <a class="nav-link" href="{% url 'core:login' %}">Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-sm btn-primary ms-lg-1" href="{% url 'accounts:register' %}">Register</a>
+                            <a class="btn btn-sm btn-primary ms-lg-1" href="{% url 'core:register' %}">Register</a>
                         </li>
                     {% endif %}
                 </ul>

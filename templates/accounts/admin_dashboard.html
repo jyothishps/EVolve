@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2>Admin Dashboard</h2>
+    <p class="text-muted">Logged in as <strong>{{ request.user.username }}</strong> ({{ request.user.role }})</p>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100 bg-white">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">
+                    <i class="bi bi-plus-circle text-primary me-2"></i>Add Station
+                </h5>
+                <p class="card-text text-muted">Register a new charging station location into the network.</p>
+                <a href="{% url 'stations:station_add' %}" class="btn btn-primary">Add Station</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100 bg-white">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">
+                    <i class="bi bi-geo-alt text-success me-2"></i>Station Map
+                </h5>
+                <p class="card-text text-muted">View all active charging stations across the network.</p>
+                <a href="{% url 'stations:driver_station_map' %}" class="btn btn-outline-primary">Open Map</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100 bg-white">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">
+                    <i class="bi bi-ev-station text-warning me-2"></i>Manage Stations
+                </h5>
+                <p class="card-text text-muted">View, edit, or delete existing charging stations.</p>
+                <a href="{% url 'stations:station_list' %}" class="btn btn-outline-primary">Manage Stations</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100 bg-white">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">
+                    <i class="bi bi-lightning-charge text-danger me-2"></i>Manage Chargers
+                </h5>
+                <p class="card-text text-muted">Configure charger units, power ratings, and statuses.</p>
+                <a href="{% url 'stations:charger_list' %}" class="btn btn-outline-primary">Manage Chargers</a>
+            </div>
+        </div>
+    </div>
+        <div class="col-md-4">
+        <a href="{% url 'stations:slot_list' %}" class="text-decoration-none">
+            <div class="card shadow-sm">
+                <div class="card-body text-center"><h5>Manage Slots</h5></div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

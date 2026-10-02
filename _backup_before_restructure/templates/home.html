@@ -9,24 +9,24 @@
         Locate nearby charging stations and view real-time station availability across the region.
     </p>
     <div class="d-flex justify-content-center gap-2 flex-wrap">
-        <a href="{% url 'stations:driver_station_map' %}" class="btn btn-primary btn-lg px-4">
+        <a href="{% url 'core:driver_station_map' %}" class="btn btn-primary btn-lg px-4">
             <i class="bi bi-geo-alt me-1"></i> View Station Map
         </a>
         {% if user.is_authenticated %}
             {% if user.is_admin %}
-            <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-outline-dark btn-lg px-4">
+            <a href="{% url 'core:admin_dashboard' %}" class="btn btn-outline-dark btn-lg px-4">
                 Admin Dashboard
             </a>
             {% else %}
-            <a href="{% url 'accounts:driver_dashboard' %}" class="btn btn-outline-dark btn-lg px-4">
+            <a href="{% url 'core:driver_dashboard' %}" class="btn btn-outline-dark btn-lg px-4">
                 My Dashboard
             </a>
             {% endif %}
         {% else %}
-            <a href="{% url 'accounts:register' %}" class="btn btn-success btn-lg px-4">
+            <a href="{% url 'core:register' %}" class="btn btn-success btn-lg px-4">
                 Register
             </a>
-            <a href="{% url 'accounts:login' %}" class="btn btn-outline-secondary btn-lg px-4">
+            <a href="{% url 'core:login' %}" class="btn btn-outline-secondary btn-lg px-4">
                 Sign In
             </a>
         {% endif %}

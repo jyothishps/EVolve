@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Login - EV Charging Slot Booking System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm bg-white">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h4 class="mb-0">Sign In</h4>
+            </div>
+            <div class="card-body p-4">
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        Invalid username or password. Please try again.
+                    </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        {{ form.username }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        {{ form.password }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mt-2">Login</button>
+                </form>
+
+                <div class="mt-3 text-center">
+                    <span class="text-muted small">Don't have an account?</span>
+                    <a href="{% url 'accounts:register' %}" class="small">Register here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

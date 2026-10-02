@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Driver Dashboard{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2>Driver Dashboard</h2>
+    <p class="text-muted">Welcome, <strong>{{ request.user.username }}</strong> ({{ request.user.role }})</p>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100 bg-white">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">
+                    <i class="bi bi-geo-alt text-success me-2"></i>Station Map
+                </h5>
+                <p class="card-text text-muted">Explore active EV charging stations on the interactive map.</p>
+                <a href="{% url 'stations:driver_station_map' %}" class="btn btn-primary">Open Station Map</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <a href="{% url 'stations:driver_station_list' %}" class="text-decoration-none">
+            <div class="card shadow-sm">
+                <div class="card-body text-center"><h5>Browse Stations</h5></div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-4">
+        <a href="{% url 'bookings:booking_list' %}" class="text-decoration-none">
+            <div class="card shadow-sm">
+                <div class="card-body text-center"><h5>My Bookings</h5></div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -19,6 +19,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'accounts',
+    'stations',
+    'bookings',
+    'sessions_app',
     'core',
 ]
 
@@ -78,9 +82,9 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Login redirect settings (used from Phase 2 onward)
-LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
+# Login redirect settings
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = 'accounts:driver_dashboard'
+LOGOUT_REDIRECT_URL = 'core:home'
 
-AUTH_USER_MODEL = 'core.User'
+AUTH_USER_MODEL = 'accounts.User'
