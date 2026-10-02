@@ -23,6 +23,7 @@ urlpatterns = [
 
     # Slot management (Admin)
     path('slots/', views.slot_list, name='slot_list'),
+    path('manage/slots/', views.slot_list),
     path('slots/add/', views.slot_add, name='slot_add'),
     path('slots/<int:slot_id>/edit/', views.slot_edit, name='slot_edit'),
     path('slots/<int:slot_id>/delete/', views.slot_delete, name='slot_delete'),

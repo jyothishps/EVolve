@@ -1,55 +1,84 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.utils import timezone
-
+from django.db import transaction
 from accounts.decorators import admin_required
 from bookings.models import Booking
 from .models import ChargingSession
+from .forms import ChargingSessionForm
+
+
+@admin_required
+def session_list(request):
+    """
+    Admin: view all charging sessions, newest first.
+    """
+    sessions = ChargingSession.objects.select_related(
+        'booking', 'station', 'charger'
+    ).order_by('-timestamp')
+    return render(request, 'sessions_app/session_list.html', {'sessions': sessions})
 
 
 @admin_required
 def session_start(request, booking_id):
     """
-    Start/record a charging session for a confirmed booking.
+    Admin starts a session for a Confirmed booking.
+    Creates a ChargingSession record with entered data.
+    Note: no IoT hardware - traffic/weather values here are
+    estimated/simulated for demonstration, labeled as such in template.
     """
-    booking = get_object_or_404(Booking, id=booking_id, status='Confirmed')
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if booking.status != 'Confirmed':
+        messages.error(request, 'Only Confirmed bookings can start a session.')
+        return redirect('bookings:admin_booking_list')
+
     if hasattr(booking, 'chargingsession'):
-        messages.warning(request, 'A session already exists for this booking.')
-        return redirect('bookings:booking_detail', booking_id=booking.id)
+        messages.error(request, 'A session already exists for this booking.')
+        return redirect('sessions_app:session_detail', session_id=booking.chargingsession.id)
 
     if request.method == 'POST':
-        actual_load = float(request.POST.get('actual_load', 50.0))
-        charging_power = float(request.POST.get('charging_power_kW', booking.charger.charging_power_kW))
-        duration = float(request.POST.get('duration', 1.0))
-        traffic_density = int(request.POST.get('traffic_density', 0))
-        weather_condition = request.POST.get('weather_condition', 'Clear')
+        form = ChargingSessionForm(request.POST)
+        if form.is_valid():
+            session = form.save(commit=False)
+            session.booking = booking
+            session.station = booking.station
+            session.charger = booking.charger
+            session.calculate_energy()  # energy_kWh = power * duration
+            session.save()
+            messages.success(request, 'Charging session started and recorded.')
+            return redirect('sessions_app:session_detail', session_id=session.id)
+    else:
+        form = ChargingSessionForm()
 
-        session = ChargingSession.objects.create(
-            booking=booking,
-            station=booking.station,
-            charger=booking.charger,
-            timestamp=timezone.now(),
-            actual_load=actual_load,
-            charging_power_kW=charging_power,
-            energy_kWh=charging_power * duration,
-            duration=duration,
-            traffic_density=traffic_density,
-            weather_condition=weather_condition,
-        )
-        messages.success(request, f'Charging session #{session.id} started.')
-        return redirect('bookings:booking_detail', booking_id=booking.id)
+    return render(request, 'sessions_app/session_start_form.html', {'form': form, 'booking': booking})
 
-    return render(request, 'sessions_app/session_form.html', {'booking': booking})
+
+@admin_required
+def session_detail(request, session_id):
+    """
+    Admin: view session details, option to mark as complete.
+    """
+    session = get_object_or_404(ChargingSession, id=session_id)
+    return render(request, 'sessions_app/session_detail.html', {'session': session})
 
 
 @admin_required
 def session_complete(request, session_id):
     """
-    Complete an active charging session.
+    Admin marks session as complete:
+    - Booking status -> Completed
+    - ChargingSlot status -> Completed
     """
     session = get_object_or_404(ChargingSession, id=session_id)
+
+    if session.booking.status == 'Completed':
+        messages.info(request, 'This session is already marked complete.')
+        return redirect('sessions_app:session_detail', session_id=session.id)
+
     if request.method == 'POST':
-        session.complete_session()
-        messages.success(request, f'Session #{session.id} marked as completed.')
-    return redirect('bookings:booking_detail', booking_id=session.booking.id)
+        with transaction.atomic():
+            session.complete_session()  # model method: updates booking + slot status
+        messages.success(request, 'Session completed. Booking and slot marked Completed.')
+        return redirect('sessions_app:session_detail', session_id=session.id)
+
+    return redirect('sessions_app:session_detail', session_id=session.id)

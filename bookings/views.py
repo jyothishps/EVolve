@@ -126,3 +126,11 @@ def booking_cancel(request, booking_id):
         return redirect('bookings:booking_list')
 
     return render(request, 'bookings/booking_detail.html', {'booking': booking, 'confirm_cancel': True})
+
+# bookings/views.py - add if missing
+from accounts.decorators import admin_required
+
+@admin_required
+def admin_booking_list(request):
+    bookings = Booking.objects.select_related('user', 'station', 'charger', 'slot').order_by('-created_at')
+    return render(request, 'bookings/admin_booking_list.html', {'bookings': bookings})

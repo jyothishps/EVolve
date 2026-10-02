@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Session Details{% endblock %}
+
+{% block content %}
+<h2>Charging Session #{{ session.id }}</h2>
+
+<div class="card shadow-sm mt-3" style="max-width: 500px;">
+    <div class="card-body">
+        <p><strong>Booking:</strong> #{{ session.booking.id }} ({{ session.booking.user.username }})</p>
+        <p><strong>Station:</strong> {{ session.station.name }} ({{ session.station.station_code }})</p>
+        <p><strong>Charger:</strong> #{{ session.charger.id }} ({{ session.charger.charging_power_kW }} kW)</p>
+        <p><strong>Timestamp:</strong> {{ session.timestamp }}</p>
+        <p><strong>Actual Load:</strong> {{ session.actual_load }} kW</p>
+        <p><strong>Charging Power:</strong> {{ session.charging_power_kW }} kW</p>
+        <p><strong>Duration:</strong> {{ session.duration }} hours</p>
+        <p><strong>Energy Delivered:</strong> {{ session.energy_kWh }} kWh</p>
+        <p><strong>Traffic Density (Estimated):</strong> {{ session.get_traffic_density_display }}</p>
+        <p><strong>Weather (Estimated):</strong> {{ session.weather_condition }}</p>
+        <p><strong>Booking Status:</strong>
+            <span class="badge bg-{% if session.booking.status == 'Completed' %}info{% else %}warning{% endif %}">
+                {{ session.booking.status }}
+            </span>
+        </p>
+
+        {% if session.booking.status != 'Completed' %}
+            <form method="post" action="{% url 'sessions_app:session_complete' session.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success">Mark Session Complete</button>
+            </form>
+        {% else %}
+            <p class="text-success"><strong>Session completed.</strong></p>
+        {% endif %}
+
+        <a href="{% url 'sessions_app:session_list' %}" class="btn btn-secondary mt-2">Back to Sessions</a>
+    </div>
+</div>
+{% endblock %}

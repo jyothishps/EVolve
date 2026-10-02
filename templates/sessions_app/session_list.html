@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Charging Sessions{% endblock %}
+
+{% block content %}
+<h2>Charging Sessions</h2>
+
+<table class="table table-bordered table-hover bg-white">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Booking</th>
+            <th>Station</th>
+            <th>Energy (kWh)</th>
+            <th>Load (kW)</th>
+            <th>Timestamp</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for session in sessions %}
+        <tr>
+            <td>{{ session.id }}</td>
+            <td>#{{ session.booking.id }}</td>
+            <td>{{ session.station.station_code }}</td>
+            <td>{{ session.energy_kWh }}</td>
+            <td>{{ session.actual_load }}</td>
+            <td>{{ session.timestamp }}</td>
+            <td>
+                <span class="badge bg-{% if session.booking.status == 'Completed' %}info{% else %}warning{% endif %}">
+                    {{ session.booking.status }}
+                </span>
+            </td>
+            <td>
+                <a href="{% url 'sessions_app:session_detail' session.id %}" class="btn btn-sm btn-outline-primary">View</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-center text-muted">No charging sessions yet.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
