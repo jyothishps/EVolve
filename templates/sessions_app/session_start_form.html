@@ -6,8 +6,10 @@
 <p class="text-muted">Booking #{{ booking.id }} - {{ booking.station.name }} - {{ booking.user.username }}</p>
 
 <div class="alert alert-info">
-    This project has no IoT hardware. Traffic density and weather condition entered here are
-    <strong>estimated/simulated</strong> values for demonstration purposes, not real-time sensor data.
+    <strong>No IoT hardware is connected to this system.</strong> Charging power ({{ rated_power }} kW) and
+    duration ({{ duration_hours }} hrs) are derived from the charger and booked slot. Actual load, traffic
+    density, and weather are <strong>system-simulated</strong> for demonstration — review and adjust below
+    before confirming.
 </div>
 
 <form method="post">
@@ -16,15 +18,17 @@
         <div class="mb-3">
             <label class="form-label">{{ field.label }}</label>
             {{ field }}
-            {% if field.help_text %}
-                <small class="text-muted">{{ field.help_text }}</small>
+            {% if field.name == 'actual_load' or field.name == 'traffic_density' or field.name == 'weather_condition' %}
+                <small class="text-muted">Simulated value — adjustable</small>
+            {% elif field.name == 'charging_power_kW' or field.name == 'duration' %}
+                <small class="text-muted">Derived from charger/slot data</small>
             {% endif %}
             {% if field.errors %}
                 <div class="text-danger small">{{ field.errors|join:", " }}</div>
             {% endif %}
         </div>
     {% endfor %}
-    <button type="submit" class="btn btn-success">Start Session</button>
+    <button type="submit" class="btn btn-success">Confirm &amp; Start Session</button>
     <a href="{% url 'bookings:admin_booking_list' %}" class="btn btn-secondary">Cancel</a>
 </form>
 {% endblock %}

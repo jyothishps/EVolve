@@ -5,7 +5,9 @@ from accounts.decorators import admin_required
 from bookings.models import Booking
 from .models import ChargingSession
 from .forms import ChargingSessionForm
-
+import random
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 @admin_required
 def session_list(request):
@@ -22,9 +24,12 @@ def session_list(request):
 def session_start(request, booking_id):
     """
     Admin starts a session for a Confirmed booking.
-    Creates a ChargingSession record with entered data.
-    Note: no IoT hardware - traffic/weather values here are
-    estimated/simulated for demonstration, labeled as such in template.
+    Since there's no IoT hardware, values are auto-simulated:
+    - charging_power_kW: pulled directly from the charger's rated power (real data, not guessed)
+    - duration: calculated from the slot's start/end time (real data)
+    - actual_load: simulated as rated power +/- 10% random variance (no sensor exists)
+    - traffic_density / weather_condition: randomly pre-filled, admin can override before saving
+    All simulated fields remain editable - admin confirms rather than blindly types numbers.
     """
     booking = get_object_or_404(Booking, id=booking_id)
 
@@ -36,6 +41,32 @@ def session_start(request, booking_id):
         messages.error(request, 'A session already exists for this booking.')
         return redirect('sessions_app:session_detail', session_id=booking.chargingsession.id)
 
+    slot = booking.slot
+    charger = booking.charger
+
+    # Real, derivable values - not guessed
+    rated_power = charger.charging_power_kW
+
+    start_dt = datetime.combine(slot.date, slot.start_time)
+    end_dt = datetime.combine(slot.date, slot.end_time)
+    if end_dt <= start_dt:
+        end_dt += timedelta(days=1)  # handles slots crossing midnight
+    duration_hours = round((end_dt - start_dt).total_seconds() / 3600, 2)
+
+    # Simulated values - no sensor hardware exists, clearly labeled in UI
+    simulated_load = round(rated_power * random.uniform(0.85, 1.10), 2)
+    simulated_traffic = random.choice([0, 1, 2])
+    simulated_weather = random.choice(['Clear', 'Cloudy', 'Rainy'])
+
+    initial_data = {
+        'timestamp': timezone.localtime(),
+        'actual_load': simulated_load,
+        'charging_power_kW': rated_power,
+        'duration': duration_hours,
+        'traffic_density': simulated_traffic,
+        'weather_condition': simulated_weather,
+    }
+
     if request.method == 'POST':
         form = ChargingSessionForm(request.POST)
         if form.is_valid():
@@ -43,14 +74,19 @@ def session_start(request, booking_id):
             session.booking = booking
             session.station = booking.station
             session.charger = booking.charger
-            session.calculate_energy()  # energy_kWh = power * duration
+            session.calculate_energy()
             session.save()
             messages.success(request, 'Charging session started and recorded.')
             return redirect('sessions_app:session_detail', session_id=session.id)
     else:
-        form = ChargingSessionForm()
+        form = ChargingSessionForm(initial=initial_data)
 
-    return render(request, 'sessions_app/session_start_form.html', {'form': form, 'booking': booking})
+    return render(request, 'sessions_app/session_start_form.html', {
+        'form': form,
+        'booking': booking,
+        'rated_power': rated_power,
+        'duration_hours': duration_hours,
+    })
 
 
 @admin_required
