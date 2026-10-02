@@ -35,4 +35,10 @@ urlpatterns = [
     # Driver station browsing
     path('stations/', views.driver_station_list, name='driver_station_list'),
     path('stations/<int:station_id>/', views.driver_station_detail, name='driver_station_detail'),
+
+        # Booking core (driver)
+    path('bookings/create/<int:slot_id>/', views.booking_create, name='booking_create'),
+    path('bookings/', views.booking_list, name='booking_list'),
+    path('bookings/<int:booking_id>/', views.booking_detail, name='booking_detail'),
+    path('bookings/<int:booking_id>/cancel/', views.booking_cancel, name='booking_cancel'),
 ]

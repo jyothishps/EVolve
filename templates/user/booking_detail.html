@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Booking Details{% endblock %}
+
+{% block content %}
+<h2>Booking #{{ booking.id }}</h2>
+
+<div class="card shadow-sm mt-3" style="max-width: 500px;">
+    <div class="card-body">
+        <p><strong>Station:</strong> {{ booking.station.name }} ({{ booking.station.station_code }})</p>
+        <p><strong>Charger:</strong> #{{ booking.charger.id }} - {{ booking.charger.charging_power_kW }} kW</p>
+        <p><strong>Date:</strong> {{ booking.booking_date }}</p>
+        <p><strong>Time:</strong> {{ booking.booking_time }}</p>
+        <p><strong>Status:</strong>
+            <span class="badge bg-{% if booking.status == 'Confirmed' %}success{% elif booking.status == 'Pending' %}warning{% elif booking.status == 'Completed' %}info{% else %}secondary{% endif %}">
+                {{ booking.status }}
+            </span>
+        </p>
+        <p class="text-muted"><small>Booked on {{ booking.created_at }}</small></p>
+
+        {% if confirm_cancel %}
+            <div class="alert alert-warning">Are you sure you want to cancel this booking?</div>
+            <form method="post" action="{% url 'core:booking_cancel' booking.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Yes, Cancel Booking</button>
+                <a href="{% url 'core:booking_detail' booking.id %}" class="btn btn-secondary">No, Go Back</a>
+            </form>
+        {% elif booking.status == 'Confirmed' or booking.status == 'Pending' %}
+            <a href="{% url 'core:booking_cancel' booking.id %}" class="btn btn-outline-danger">Cancel Booking</a>
+        {% endif %}
+
+        <a href="{% url 'core:booking_list' %}" class="btn btn-secondary mt-2">Back to My Bookings</a>
+    </div>
+</div>
+{% endblock %}
