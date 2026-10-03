@@ -18,11 +18,17 @@ class Booking(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     station = models.ForeignKey('stations.Station', on_delete=models.CASCADE)
     charger = models.ForeignKey('stations.Charger', on_delete=models.CASCADE)
-    slot = models.OneToOneField('stations.ChargingSlot', on_delete=models.CASCADE)
+    slot = models.ForeignKey('stations.ChargingSlot', on_delete=models.CASCADE)
     booking_date = models.DateField()
     booking_time = models.TimeField()
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='Pending')
     created_at = models.DateTimeField(auto_now_add=True)
+    checked_in_at = models.DateTimeField(null=True, blank=True)
+
+    def check_in(self):
+        from django.utils import timezone
+        self.checked_in_at = timezone.now()
+        self.save()
 
     def confirm_booking(self):
         self.status = 'Confirmed'

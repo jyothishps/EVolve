@@ -137,3 +137,31 @@ def admin_booking_list(request):
     bookings = Booking.objects.select_related('user', 'station', 'charger', 'slot').order_by('-created_at')
     return render(request, 'bookings/admin_booking_list.html', {'bookings': bookings})
 
+
+@login_required
+def booking_checkin(request, booking_id):
+    """
+    Driver confirms physical arrival at the station.
+    Does NOT create a charging session - just a presence signal that
+    protects the booking from no-show auto-expiry and gives admin visibility.
+    """
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if booking.user != request.user:
+        messages.error(request, 'You are not authorized to check in for this booking.')
+        return redirect('bookings:booking_list')
+
+    if booking.status not in ['Pending', 'Confirmed']:
+        messages.error(request, 'Check-in is only available for active bookings.')
+        return redirect('bookings:booking_detail', booking_id=booking.id)
+
+    if booking.checked_in_at:
+        messages.info(request, 'You have already checked in for this booking.')
+        return redirect('bookings:booking_detail', booking_id=booking.id)
+
+    if request.method == 'POST':
+        booking.check_in()
+        messages.success(request, 'Checked in successfully. The station has been notified of your arrival.')
+        return redirect('bookings:booking_detail', booking_id=booking.id)
+
+    return redirect('bookings:booking_detail', booking_id=booking.id)

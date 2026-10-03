@@ -16,7 +16,16 @@
             </span>
         </p>
         <p class="text-muted"><small>Booked on {{ booking.created_at }}</small></p>
-
+        {% if booking.status == 'Confirmed' or booking.status == 'Pending' %}
+            {% if not booking.checked_in_at %}
+                <form method="post" action="{% url 'bookings:booking_checkin' booking.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-success">I've Arrived - Check In</button>
+                </form>
+            {% else %}
+                <p class="text-success mb-0"><strong>✓ Checked in at {{ booking.checked_in_at }}</strong></p>
+            {% endif %}
+        {% endif %}
         {% if confirm_cancel %}
             <div class="alert alert-warning">Are you sure you want to cancel this booking?</div>
             <form method="post" action="{% url 'bookings:booking_cancel' booking.id %}">

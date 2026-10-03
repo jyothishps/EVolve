@@ -13,6 +13,7 @@
             <th>Date</th>
             <th>Status</th>
             <th>Actions</th>
+            <th>Check-In</th>
         </tr>
     </thead>
     <tbody>
@@ -32,10 +33,18 @@
                     <a href="{% url 'sessions_app:session_start' booking.id %}" class="btn btn-sm btn-outline-success">Start Session</a>
                 {% endif %}
             </td>
+                        <td>
+                {% if booking.checked_in_at %}
+                    <span class="badge bg-success">Checked In</span>
+                {% else %}
+                    <span class="badge bg-secondary">Not Yet</span>
+                {% endif %}
+            </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="text-center text-muted">No bookings yet.</td></tr>
+        <tr><td colspan="7" class="text-center text-muted">No bookings yet.</td></tr>
         {% endfor %}
+
     </tbody>
 </table>
 {% endblock %}
