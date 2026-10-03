@@ -11,38 +11,46 @@ from .utils import expire_overdue_bookings
 
 @login_required
 def booking_create(request, slot_id):
-    """
-    GET: show confirmation page with slot details.
-    POST: create the actual booking, inside a DB transaction to prevent
-    two drivers booking the same slot at the same time (double booking).
-    """
     slot = get_object_or_404(ChargingSlot, id=slot_id)
 
-    # Admin should not book slots - booking is a driver action only
     if request.user.is_admin():
         messages.error(request, 'Admins cannot make bookings.')
         return redirect('accounts:admin_dashboard')
 
-    # Reject slots whose date already passed - can't book yesterday's slot
     if slot.date < timezone.localdate():
         messages.error(request, 'Cannot book a slot in the past.')
         return redirect('stations:driver_station_detail', station_id=slot.station.id)
 
-    # Reject booking on inactive/maintenance stations
     if slot.station.status != 'Active':
         messages.error(request, 'This station is not currently active.')
         return redirect('stations:driver_station_list')
 
-    # Reject booking if charger itself unavailable (Occupied/Maintenance/Offline)
     if slot.charger.status != 'Available':
         messages.error(request, 'Selected charger is not available.')
         return redirect('stations:driver_station_detail', station_id=slot.station.id)
 
+    # NEW: check for overlapping active bookings by the same driver on the same date
+    overlapping = Booking.objects.filter(
+        user=request.user,
+        status__in=['Pending', 'Confirmed'],
+        slot__date=slot.date,
+    ).filter(
+        slot__start_time__lt=slot.end_time,
+        slot__end_time__gt=slot.start_time,
+    )
+
+    if overlapping.exists():
+        clash = overlapping.first()
+        messages.error(
+            request,
+            f'This overlaps with your existing booking at {clash.station.name} '
+            f'({clash.slot.start_time} - {clash.slot.end_time}). Please choose a different time.'
+        )
+        return redirect('stations:driver_station_detail', station_id=slot.station.id)
+
     if request.method == 'POST':
         try:
-            # atomic block: either everything inside succeeds, or nothing does
             with transaction.atomic():
-                # select_for_update locks this row until transaction ends
                 locked_slot = ChargingSlot.objects.select_for_update().get(id=slot.id)
 
                 if locked_slot.status != 'Available':
@@ -59,7 +67,6 @@ def booking_create(request, slot_id):
                     status='Confirmed',
                 )
 
-                # mark slot as taken so nobody else can book it
                 locked_slot.status = 'Reserved'
                 locked_slot.save()
 
@@ -70,7 +77,6 @@ def booking_create(request, slot_id):
             messages.error(request, 'This slot was already booked. Please choose another.')
             return redirect('stations:driver_station_detail', station_id=slot.station.id)
 
-    # GET request - just show the confirmation page
     return render(request, 'bookings/booking_confirm.html', {'slot': slot})
 
 
