@@ -5,6 +5,7 @@ from django.contrib import messages
 from accounts.decorators import admin_required
 from .models import Station, Charger, ChargingSlot
 from .forms import StationForm, ChargerForm, ChargingSlotForm
+from bookings.utils import expire_overdue_bookings
 
 
 # ---------- STATION MANAGEMENT (ADMIN) ----------
@@ -92,6 +93,7 @@ def charger_delete(request, charger_id):
 
 @admin_required
 def slot_list(request):
+    expire_overdue_bookings()
     slots = ChargingSlot.objects.select_related('station', 'charger').order_by('-date')
     return render(request, 'stations/admin_slot_list.html', {'slots': slots})
 
@@ -140,12 +142,14 @@ def driver_station_map(request):
 
 @login_required
 def driver_station_list(request):
+    expire_overdue_bookings()
     stations = Station.objects.filter(status='Active').order_by('station_code')
     return render(request, 'stations/station_list.html', {'stations': stations})
 
 
 @login_required
 def driver_station_detail(request, station_id):
+    expire_overdue_bookings()
     station = get_object_or_404(Station, id=station_id)
     chargers = Charger.objects.filter(station=station)
     available_slots = ChargingSlot.objects.filter(
@@ -158,3 +162,4 @@ def driver_station_detail(request, station_id):
         'available_slots': available_slots,
     }
     return render(request, 'stations/station_detail.html', context)
+

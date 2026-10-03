@@ -10,7 +10,7 @@ SECRET_KEY = 'django-insecure-change-this-key-in-production-ev-charging-2026'
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver']
 
 INSTALLED_APPS = [
     'django.contrib.admin',

@@ -45,11 +45,11 @@ class ChargingSessionStep6Tests(TestCase):
             status='Available'
         )
 
-        today = timezone.localdate()
+        test_date = timezone.localdate() + datetime.timedelta(days=1)
         self.slot_confirmed = ChargingSlot.objects.create(
             station=self.station,
             charger=self.charger,
-            date=today,
+            date=test_date,
             start_time=datetime.time(10, 0),
             end_time=datetime.time(11, 0),
             status='Reserved'
@@ -57,7 +57,7 @@ class ChargingSessionStep6Tests(TestCase):
         self.slot_pending = ChargingSlot.objects.create(
             station=self.station,
             charger=self.charger,
-            date=today,
+            date=test_date,
             start_time=datetime.time(11, 0),
             end_time=datetime.time(12, 0),
             status='Available'
@@ -65,7 +65,7 @@ class ChargingSessionStep6Tests(TestCase):
         self.slot_cancelled = ChargingSlot.objects.create(
             station=self.station,
             charger=self.charger,
-            date=today,
+            date=test_date,
             start_time=datetime.time(12, 0),
             end_time=datetime.time(13, 0),
             status='Available'
@@ -77,7 +77,7 @@ class ChargingSessionStep6Tests(TestCase):
             station=self.station,
             charger=self.charger,
             slot=self.slot_confirmed,
-            booking_date=today,
+            booking_date=test_date,
             booking_time=datetime.time(10, 0),
             status='Confirmed'
         )
@@ -87,7 +87,7 @@ class ChargingSessionStep6Tests(TestCase):
             station=self.station,
             charger=self.charger,
             slot=self.slot_pending,
-            booking_date=today,
+            booking_date=test_date,
             booking_time=datetime.time(11, 0),
             status='Pending'
         )
@@ -97,10 +97,11 @@ class ChargingSessionStep6Tests(TestCase):
             station=self.station,
             charger=self.charger,
             slot=self.slot_cancelled,
-            booking_date=today,
+            booking_date=test_date,
             booking_time=datetime.time(12, 0),
             status='Cancelled'
         )
+
 
         # Log in as admin
         self.client.force_login(self.admin_user)

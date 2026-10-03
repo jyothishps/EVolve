@@ -5,8 +5,9 @@ from django.db import transaction, IntegrityError
 from django.utils import timezone
 
 from stations.models import ChargingSlot
+from accounts.decorators import admin_required
 from .models import Booking
-
+from .utils import expire_overdue_bookings
 
 @login_required
 def booking_create(request, slot_id):
@@ -79,6 +80,7 @@ def booking_list(request):
     Driver sees only their own bookings, newest first.
     select_related pulls station/charger/slot data in same query.
     """
+    expire_overdue_bookings()
     bookings = Booking.objects.filter(user=request.user).select_related(
         'station', 'charger', 'slot'
     ).order_by('-created_at')
@@ -91,6 +93,7 @@ def booking_detail(request, booking_id):
     Show one booking's full details. Ownership check: a driver
     can only view their own booking, not someone else's by guessing the URL id.
     """
+    expire_overdue_bookings()
     booking = get_object_or_404(Booking, id=booking_id)
 
     if booking.user != request.user and not request.user.is_admin():
@@ -127,10 +130,10 @@ def booking_cancel(request, booking_id):
 
     return render(request, 'bookings/booking_detail.html', {'booking': booking, 'confirm_cancel': True})
 
-# bookings/views.py - add if missing
-from accounts.decorators import admin_required
 
 @admin_required
 def admin_booking_list(request):
+    expire_overdue_bookings()
     bookings = Booking.objects.select_related('user', 'station', 'charger', 'slot').order_by('-created_at')
     return render(request, 'bookings/admin_booking_list.html', {'bookings': bookings})
+
