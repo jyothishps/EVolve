@@ -9,6 +9,8 @@ from accounts.decorators import admin_required
 from .models import Booking
 from .utils import expire_overdue_bookings
 
+from sessions_app.models import ChargingSession
+
 @login_required
 def booking_create(request, slot_id):
     slot = get_object_or_404(ChargingSlot, id=slot_id)
@@ -139,10 +141,36 @@ def booking_cancel(request, booking_id):
 
 @admin_required
 def admin_booking_list(request):
+    """
+    Admin: view all bookings. Checked-in bookings awaiting session start
+    are surfaced in a dedicated queue at the top. Supports search by
+    booking ID via ?search= query param.
+    """
     expire_overdue_bookings()
-    bookings = Booking.objects.select_related('user', 'station', 'charger', 'slot').order_by('-created_at')
-    return render(request, 'bookings/admin_booking_list.html', {'bookings': bookings})
 
+    search_query = request.GET.get('search', '').strip()
+
+    all_bookings = Booking.objects.select_related('user', 'station', 'charger', 'slot')
+
+    if search_query:
+        all_bookings = all_bookings.filter(id=search_query) if search_query.isdigit() else all_bookings.none()
+
+    all_bookings = all_bookings.order_by('-created_at')
+
+    # Checked-in but no session started yet - the "awaiting session" queue
+    checked_in_queue = all_bookings.filter(
+        checked_in_at__isnull=False,
+        status='Confirmed'
+    ).exclude(
+        id__in=ChargingSession.objects.values_list('booking_id', flat=True)
+    ).order_by('checked_in_at')
+
+    context = {
+        'bookings': all_bookings,
+        'checked_in_queue': checked_in_queue,
+        'search_query': search_query,
+    }
+    return render(request, 'bookings/admin_booking_list.html', context)
 
 @login_required
 def booking_checkin(request, booking_id):

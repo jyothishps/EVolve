@@ -341,3 +341,175 @@ class OverdueBookingExpirationTests(TestCase):
         messages = list(second_resp.context['messages'])
         self.assertTrue(any('You have already checked in for this booking.' in str(m) for m in messages))
 
+
+class OverlappingBookingTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.test_date = timezone.localdate() + timedelta(days=1)
+        self.different_date = timezone.localdate() + timedelta(days=2)
+
+        # Drivers
+        self.driver1 = User.objects.create_user(
+            username='driver1', password='password123', email='d1@test.com', role='DRIVER'
+        )
+        self.driver2 = User.objects.create_user(
+            username='driver2', password='password123', email='d2@test.com', role='DRIVER'
+        )
+
+        # Stations
+        self.station1 = Station.objects.create(
+            station_code='ST001', name='Station North', address='100 North Rd',
+            latitude=12.97, longitude=77.59, status='Active'
+        )
+        self.station2 = Station.objects.create(
+            station_code='ST002', name='Station South', address='200 South Rd',
+            latitude=12.98, longitude=77.60, status='Active'
+        )
+        self.station3 = Station.objects.create(
+            station_code='ST003', name='Station East', address='300 East Rd',
+            latitude=12.99, longitude=77.61, status='Active'
+        )
+        self.station5 = Station.objects.create(
+            station_code='ST005', name='Station West', address='500 West Rd',
+            latitude=12.96, longitude=77.58, status='Active'
+        )
+
+        # Chargers
+        self.charger1 = Charger.objects.create(
+            station=self.station1, charging_power_kW=50.0, connector_type='CCS2', status='Available'
+        )
+        self.charger2 = Charger.objects.create(
+            station=self.station2, charging_power_kW=50.0, connector_type='CCS2', status='Available'
+        )
+        self.charger3 = Charger.objects.create(
+            station=self.station3, charging_power_kW=50.0, connector_type='CCS2', status='Available'
+        )
+        self.charger5 = Charger.objects.create(
+            station=self.station5, charging_power_kW=50.0, connector_type='CCS2', status='Available'
+        )
+
+        from datetime import time
+        # Slot A: ST001, 10:00-11:00 AM on test_date
+        self.slot_a = ChargingSlot.objects.create(
+            station=self.station1, charger=self.charger1, date=self.test_date,
+            start_time=time(10, 0), end_time=time(11, 0), status='Available'
+        )
+        # Slot B: ST005, 10:30-11:30 AM on test_date (overlaps Slot A)
+        self.slot_b = ChargingSlot.objects.create(
+            station=self.station5, charger=self.charger5, date=self.test_date,
+            start_time=time(10, 30), end_time=time(11, 30), status='Available'
+        )
+        # Slot C: ST002, 14:00-15:00 PM on test_date (same day, no overlap)
+        self.slot_c = ChargingSlot.objects.create(
+            station=self.station2, charger=self.charger2, date=self.test_date,
+            start_time=time(14, 0), end_time=time(15, 0), status='Available'
+        )
+        # Slot D: ST003, 10:00-11:00 AM on different_date (different date)
+        self.slot_d = ChargingSlot.objects.create(
+            station=self.station3, charger=self.charger3, date=self.different_date,
+            start_time=time(10, 0), end_time=time(11, 0), status='Available'
+        )
+
+    def test_book_slot_a_succeeds(self):
+        """1. Book Slot A (ST001, 10:00-11:00 AM) as driver -> succeeds"""
+        self.client.login(username='driver1', password='password123')
+        resp = self.client.post(reverse('bookings:booking_create', args=[self.slot_a.id]), follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        self.slot_a.refresh_from_db()
+        self.assertEqual(self.slot_a.status, 'Reserved')
+
+        booking_a = Booking.objects.get(slot=self.slot_a, user=self.driver1)
+        self.assertEqual(booking_a.status, 'Confirmed')
+
+    def test_book_slot_b_overlapping_same_driver_blocked_with_error(self):
+        """2. Try book Slot B (ST005, 10:30-11:30 AM, same day) as same driver -> blocked, error names clashing station/time"""
+        self.client.login(username='driver1', password='password123')
+
+        # First book Slot A
+        self.client.post(reverse('bookings:booking_create', args=[self.slot_a.id]), follow=True)
+
+        # Now attempt to book Slot B (overlaps 10:30 with 10:00-11:00)
+        resp = self.client.post(reverse('bookings:booking_create', args=[self.slot_b.id]), follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        # Slot B should NOT be booked
+        self.slot_b.refresh_from_db()
+        self.assertEqual(self.slot_b.status, 'Available')
+        self.assertFalse(Booking.objects.filter(slot=self.slot_b).exists())
+
+        # Error message should name the clashing station and time
+        messages = list(resp.context['messages'])
+        self.assertTrue(any(
+            'overlaps with your existing booking at Station North' in str(m) and '10:00:00 - 11:00:00' in str(m)
+            for m in messages
+        ))
+
+    def test_book_slot_c_non_overlapping_same_day_succeeds(self):
+        """3. Try book Slot C (ST002, 2:00-3:00 PM, same day) as same driver -> succeeds (no overlap)"""
+        self.client.login(username='driver1', password='password123')
+
+        # Book Slot A
+        self.client.post(reverse('bookings:booking_create', args=[self.slot_a.id]), follow=True)
+
+        # Book Slot C
+        resp = self.client.post(reverse('bookings:booking_create', args=[self.slot_c.id]), follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        self.slot_c.refresh_from_db()
+        self.assertEqual(self.slot_c.status, 'Reserved')
+        self.assertTrue(Booking.objects.filter(slot=self.slot_c, user=self.driver1, status='Confirmed').exists())
+
+    def test_book_slot_d_same_time_different_day_succeeds(self):
+        """4. Try book Slot D (ST003, 10:00-11:00 AM, different day) as same driver -> succeeds (different date)"""
+        self.client.login(username='driver1', password='password123')
+
+        # Book Slot A
+        self.client.post(reverse('bookings:booking_create', args=[self.slot_a.id]), follow=True)
+
+        # Book Slot D
+        resp = self.client.post(reverse('bookings:booking_create', args=[self.slot_d.id]), follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        self.slot_d.refresh_from_db()
+        self.assertEqual(self.slot_d.status, 'Reserved')
+        self.assertTrue(Booking.objects.filter(slot=self.slot_d, user=self.driver1, status='Confirmed').exists())
+
+    def test_cancel_slot_a_retry_book_slot_b_succeeds(self):
+        """5. Cancel Slot A, retry booking Slot B (10:30-11:30 AM) -> succeeds now (no active overlapping booking anymore)"""
+        self.client.login(username='driver1', password='password123')
+
+        # Book Slot A
+        self.client.post(reverse('bookings:booking_create', args=[self.slot_a.id]), follow=True)
+        booking_a = Booking.objects.get(slot=self.slot_a, user=self.driver1)
+
+        # Cancel Slot A
+        cancel_resp = self.client.post(reverse('bookings:booking_cancel', args=[booking_a.id]), follow=True)
+        self.assertEqual(cancel_resp.status_code, 200)
+        booking_a.refresh_from_db()
+        self.assertEqual(booking_a.status, 'Cancelled')
+
+        # Now booking Slot B should succeed
+        resp_b = self.client.post(reverse('bookings:booking_create', args=[self.slot_b.id]), follow=True)
+        self.assertEqual(resp_b.status_code, 200)
+
+        self.slot_b.refresh_from_db()
+        self.assertEqual(self.slot_b.status, 'Reserved')
+        self.assertTrue(Booking.objects.filter(slot=self.slot_b, user=self.driver1, status='Confirmed').exists())
+
+    def test_different_driver_books_slot_b_while_driver1_holds_slot_a(self):
+        """6. Different driver books Slot B (10:30-11:30 AM) while first driver still holds Slot A at same time -> succeeds"""
+        # Driver 1 books Slot A
+        self.client.login(username='driver1', password='password123')
+        self.client.post(reverse('bookings:booking_create', args=[self.slot_a.id]), follow=True)
+
+        # Driver 2 logs in and books Slot B
+        self.client.login(username='driver2', password='password123')
+        resp_b = self.client.post(reverse('bookings:booking_create', args=[self.slot_b.id]), follow=True)
+        self.assertEqual(resp_b.status_code, 200)
+
+        self.slot_b.refresh_from_db()
+        self.assertEqual(self.slot_b.status, 'Reserved')
+        self.assertTrue(Booking.objects.filter(slot=self.slot_b, user=self.driver2, status='Confirmed').exists())
+
+
