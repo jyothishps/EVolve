@@ -37,6 +37,11 @@
                     <td>{{ booking.checked_in_at }}</td>
                     <td>
                         <a href="{% url 'sessions_app:session_start' booking.id %}" class="btn btn-sm btn-success">Start Session</a>
+                        <form method="post" action="{% url 'bookings:admin_booking_cancel' booking.id %}" class="d-inline"
+                              onsubmit="return confirm('Cancel booking #{{ booking.id }}?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
@@ -81,6 +86,13 @@
             <td>
                 {% if booking.status == 'Confirmed' %}
                     <a href="{% url 'sessions_app:session_start' booking.id %}" class="btn btn-sm btn-outline-success">Start Session</a>
+                {% endif %}
+                {% if booking.status == 'Pending' or booking.status == 'Confirmed' %}
+                    <form method="post" action="{% url 'bookings:admin_booking_cancel' booking.id %}" class="d-inline"
+                          onsubmit="return confirm('Cancel booking #{{ booking.id }}? The slot will be freed.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                    </form>
                 {% endif %}
             </td>
         </tr>

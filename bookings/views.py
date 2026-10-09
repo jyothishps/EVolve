@@ -13,6 +13,9 @@ from sessions_app.models import ChargingSession
 
 from .utils import expire_overdue_bookings, get_slot_datetimes, CHECKIN_OPENS_MINUTES_BEFORE
 from datetime import timedelta
+from django.db import transaction
+from accounts.decorators import admin_required
+from sessions_app.models import ChargingSession
 
 @login_required
 def booking_create(request, slot_id):
@@ -218,3 +221,33 @@ def booking_checkin(request, booking_id):
         return redirect('bookings:booking_detail', booking_id=booking.id)
 
     return redirect('bookings:booking_detail', booking_id=booking.id)
+
+
+@admin_required
+def admin_booking_cancel(request, booking_id):
+    """
+    Admin cancels an active booking (e.g. charger fault, station issue).
+    POST only. Slot goes back to Available via the model's cancel_booking().
+    Blocked if a charging session already exists - complete that session instead.
+    """
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if request.method != 'POST':
+        return redirect('bookings:admin_booking_list')
+
+    if booking.status not in ['Pending', 'Confirmed']:
+        messages.error(request, f'Booking #{booking.id} is already {booking.status.lower()}, cannot cancel.')
+        return redirect('bookings:admin_booking_list')
+
+    if ChargingSession.objects.filter(booking=booking).exists():
+        messages.error(
+            request,
+            f'Booking #{booking.id} already has a charging session. Complete the session instead of cancelling.'
+        )
+        return redirect('bookings:admin_booking_list')
+
+    with transaction.atomic():
+        booking.cancel_booking()  # status -> Cancelled, slot -> Available
+
+    messages.success(request, f'Booking #{booking.id} cancelled. Slot is available again.')
+    return redirect('bookings:admin_booking_list')

@@ -6,7 +6,8 @@ from accounts.decorators import admin_required
 from .models import Station, Charger, ChargingSlot
 from .forms import StationForm, ChargerForm, ChargingSlotForm
 from bookings.utils import expire_overdue_bookings
-
+from django.utils import timezone
+from bookings.models import Booking
 
 # ---------- STATION MANAGEMENT (ADMIN) ----------
 
@@ -163,3 +164,31 @@ def driver_station_detail(request, station_id):
     }
     return render(request, 'stations/station_detail.html', context)
 
+
+@admin_required
+def slot_reopen(request, slot_id):
+    """
+    Admin reopens a Completed/Cancelled slot so it can be booked again.
+    Refused if the slot still has an active (Pending/Confirmed) booking.
+    """
+    slot = get_object_or_404(ChargingSlot, id=slot_id)
+
+    if request.method != 'POST':
+        return redirect('stations:slot_list')
+
+    if slot.status not in ['Completed', 'Cancelled']:
+        messages.error(request, 'Only Completed or Cancelled slots can be reopened.')
+        return redirect('stations:slot_list')
+
+    if Booking.objects.filter(slot=slot, status__in=['Pending', 'Confirmed']).exists():
+        messages.error(request, 'This slot still has an active booking. Cancel that booking first.')
+        return redirect('stations:slot_list')
+
+    slot.status = 'Available'
+    slot.save()
+
+    if slot.date < timezone.localdate():
+        messages.warning(request, 'Slot reopened, but its date is in the past so drivers cannot book it.')
+    else:
+        messages.success(request, 'Slot reopened and available for booking.')
+    return redirect('stations:slot_list')

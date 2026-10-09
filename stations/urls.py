@@ -27,4 +27,5 @@ urlpatterns = [
     path('slots/add/', views.slot_add, name='slot_add'),
     path('slots/<int:slot_id>/edit/', views.slot_edit, name='slot_edit'),
     path('slots/<int:slot_id>/delete/', views.slot_delete, name='slot_delete'),
+    path('slots/<int:slot_id>/reopen/', views.slot_reopen, name='slot_reopen'),
 ]
