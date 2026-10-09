@@ -8,6 +8,7 @@ from .forms import ChargingSessionForm
 import random
 from datetime import datetime, timedelta
 from django.utils import timezone
+from bookings.utils import get_slot_datetimes
 
 @admin_required
 def session_list(request):
@@ -40,6 +41,16 @@ def session_start(request, booking_id):
     if hasattr(booking, 'chargingsession'):
         messages.error(request, 'A session already exists for this booking.')
         return redirect('sessions_app:session_detail', session_id=booking.chargingsession.id)
+
+    # Guard: session can start only if driver checked in, or slot start time has arrived
+    slot_start, _ = get_slot_datetimes(booking.slot)
+    if not booking.checked_in_at and timezone.localtime() < slot_start:
+        messages.error(
+            request,
+            'Cannot start session yet. The driver has not checked in and the slot '
+            'has not started.'
+        )
+        return redirect('bookings:admin_booking_list')
 
     slot = booking.slot
     charger = booking.charger

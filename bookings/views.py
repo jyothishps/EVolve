@@ -11,6 +11,9 @@ from .utils import expire_overdue_bookings
 
 from sessions_app.models import ChargingSession
 
+from .utils import expire_overdue_bookings, get_slot_datetimes, CHECKIN_OPENS_MINUTES_BEFORE
+from datetime import timedelta
+
 @login_required
 def booking_create(request, slot_id):
     slot = get_object_or_404(ChargingSlot, id=slot_id)
@@ -175,9 +178,8 @@ def admin_booking_list(request):
 @login_required
 def booking_checkin(request, booking_id):
     """
-    Driver confirms physical arrival at the station.
-    Does NOT create a charging session - just a presence signal that
-    protects the booking from no-show auto-expiry and gives admin visibility.
+    Driver confirms arrival. Only allowed inside the check-in window:
+    from 30 minutes before slot start until slot end.
     """
     booking = get_object_or_404(Booking, id=booking_id)
 
@@ -191,6 +193,23 @@ def booking_checkin(request, booking_id):
 
     if booking.checked_in_at:
         messages.info(request, 'You have already checked in for this booking.')
+        return redirect('bookings:booking_detail', booking_id=booking.id)
+
+    # Check-in window validation
+    slot_start, slot_end = get_slot_datetimes(booking.slot)
+    window_opens = slot_start - timedelta(minutes=CHECKIN_OPENS_MINUTES_BEFORE)
+    now = timezone.localtime()
+
+    if now < window_opens:
+        messages.error(
+            request,
+            f'Check-in opens {CHECKIN_OPENS_MINUTES_BEFORE} minutes before your slot '
+            f'({timezone.localtime(window_opens).strftime("%d %b, %I:%M %p")}).'
+        )
+        return redirect('bookings:booking_detail', booking_id=booking.id)
+
+    if now > slot_end:
+        messages.error(request, 'This slot has already ended. Check-in is closed.')
         return redirect('bookings:booking_detail', booking_id=booking.id)
 
     if request.method == 'POST':

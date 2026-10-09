@@ -513,3 +513,305 @@ class OverlappingBookingTests(TestCase):
         self.assertTrue(Booking.objects.filter(slot=self.slot_b, user=self.driver2, status='Confirmed').exists())
 
 
+class BookingTicketCheckinAndAdminQueueTests(TestCase):
+    """
+    Tests covering Step 6 (Testing) and Step 7 (Expected Result):
+    1. Book slot -> redirected to booking detail -> ticket layout, large Booking ID, QR code renders
+    2. Check in -> 'I've Arrived' button disappears, checked-in confirmation shown
+    3. Admin booking list -> checked-in booking appears in green 'Awaiting Session Start' box at top
+    4. Start Session from that queue -> works, and booking disappears from checked-in queue after session starts
+    5. Search box: valid booking ID -> list filters to just that row
+    6. Search box: invalid/non-numeric -> empty result, no crash
+    7. Clear search -> full list returns
+    """
+
+    def setUp(self):
+        from datetime import time
+        self.client = Client()
+
+        # Admin user
+        self.admin = User.objects.create_user(
+            username='test_admin',
+            password='password123',
+            email='admin@example.com',
+            role='ADMIN'
+        )
+
+        # Drivers
+        self.driver1 = User.objects.create_user(
+            username='driver_alice',
+            password='password123',
+            email='alice@example.com',
+            role='DRIVER'
+        )
+        self.driver2 = User.objects.create_user(
+            username='driver_bob',
+            password='password123',
+            email='bob@example.com',
+            role='DRIVER'
+        )
+
+        # Station and Charger
+        self.station = Station.objects.create(
+            station_code='ST200',
+            name='Metro Fast Charging Hub',
+            address='789 Downtown Boulevard',
+            latitude=13.0827,
+            longitude=80.2707,
+            status='Active'
+        )
+
+        self.charger = Charger.objects.create(
+            station=self.station,
+            charging_power_kW=60.0,
+            connector_type='CCS2',
+            status='Available'
+        )
+
+        self.test_date = timezone.localdate() + timedelta(days=2)
+
+        # Slots
+        self.slot1 = ChargingSlot.objects.create(
+            station=self.station,
+            charger=self.charger,
+            date=self.test_date,
+            start_time=time(10, 0),
+            end_time=time(11, 0),
+            status='Available'
+        )
+
+        self.slot2 = ChargingSlot.objects.create(
+            station=self.station,
+            charger=self.charger,
+            date=self.test_date,
+            start_time=time(14, 0),
+            end_time=time(15, 0),
+            status='Available'
+        )
+
+    def test_book_slot_redirects_to_detail_with_ticket_layout_and_qr(self):
+        """1. Book a slot -> redirected to booking detail -> shows ticket-style layout, large Booking ID, QR code renders"""
+        self.client.login(username='driver_alice', password='password123')
+        response = self.client.post(reverse('bookings:booking_create', args=[self.slot1.id]))
+
+        booking = Booking.objects.get(slot=self.slot1, user=self.driver1)
+        # Check redirection to booking detail
+        self.assertRedirects(response, reverse('bookings:booking_detail', args=[booking.id]))
+
+        # Follow redirect and inspect rendered HTML
+        detail_resp = self.client.get(reverse('bookings:booking_detail', args=[booking.id]))
+        self.assertEqual(detail_resp.status_code, 200)
+        content = detail_resp.content.decode()
+
+        # Ticket layout styling and large ID
+        self.assertIn('ticket-card', content)
+        self.assertIn('ticket-id', content)
+        self.assertIn(f'#{booking.id}', content)
+
+        # QR code container and QR script
+        self.assertIn('id="qrcode"', content)
+        self.assertIn('qrcode.min.js', content)
+        self.assertIn(f'Booking #{booking.id} - {self.station.station_code}', content)
+
+        # Details
+        self.assertIn(self.station.name, content)
+        self.assertIn(self.station.address, content)
+        self.assertIn('60.0 kW', content)
+
+        # Initial check-in button is present
+        self.assertIn("I've Arrived - Check In", content)
+
+    def test_check_in_hides_button_and_shows_confirmation(self):
+        """2. Check in -> 'I've Arrived' button disappears, checked-in confirmation shown"""
+        self.client.login(username='driver_alice', password='password123')
+        # Create booking directly
+        booking = Booking.objects.create(
+            user=self.driver1,
+            station=self.station,
+            charger=self.charger,
+            slot=self.slot1,
+            booking_date=self.test_date,
+            booking_time=self.slot1.start_time,
+            status='Confirmed'
+        )
+        self.slot1.status = 'Reserved'
+        self.slot1.save()
+
+        # Before check-in: button is visible, confirmation text is not
+        resp_before = self.client.get(reverse('bookings:booking_detail', args=[booking.id]))
+        self.assertIn("I've Arrived - Check In", resp_before.content.decode())
+        self.assertNotIn("Checked in at", resp_before.content.decode())
+
+        # Perform check-in via POST with follow=True to follow redirect to booking_detail
+        checkin_resp = self.client.post(reverse('bookings:booking_checkin', args=[booking.id]), follow=True)
+        self.assertEqual(checkin_resp.status_code, 200)
+
+        # Verify DB state
+        booking.refresh_from_db()
+        self.assertIsNotNone(booking.checked_in_at)
+
+        # After check-in: button disappears, confirmation shown, success message displayed
+        content_after = checkin_resp.content.decode()
+        self.assertNotIn("I've Arrived - Check In", content_after)
+        self.assertIn("Checked in at", content_after)
+        self.assertIn("Checked in successfully", content_after)
+
+    def test_admin_booking_list_checked_in_queue_and_start_session(self):
+        """
+        3 & 4. Admin booking list -> checked-in booking appears in green 'Awaiting Session Start' box at top.
+        Click 'Start Session' from that queue -> works.
+        After session starts, that booking disappears from the checked-in queue.
+        """
+        # Create booking and check in
+        booking = Booking.objects.create(
+            user=self.driver1,
+            station=self.station,
+            charger=self.charger,
+            slot=self.slot1,
+            booking_date=self.test_date,
+            booking_time=self.slot1.start_time,
+            status='Confirmed'
+        )
+        booking.check_in()
+
+        # Admin logs in
+        self.client.login(username='test_admin', password='password123')
+        resp = self.client.get(reverse('bookings:admin_booking_list'))
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+
+        # Green "Awaiting Session Start" box is visible
+        self.assertIn('Checked-In - Awaiting Session Start (1)', content)
+        self.assertIn(f'#{booking.id}', content)
+        self.assertIn(self.driver1.username, content)
+        self.assertIn(self.station.station_code, content)
+
+        # "Start Session" button is in the queue linking to session start
+        start_session_url = reverse('sessions_app:session_start', args=[booking.id])
+        self.assertIn(f'href="{start_session_url}"', content)
+
+        # Now start the charging session for this booking
+        session_data = {
+            'timestamp': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'actual_load': 58.0,
+            'charging_power_kW': 60.0,
+            'duration': 1.0,
+            'traffic_density': 1,
+            'weather_condition': 'Clear',
+        }
+        post_resp = self.client.post(start_session_url, data=session_data, follow=True)
+        self.assertEqual(post_resp.status_code, 200)
+
+        # Verify session now exists
+        self.assertTrue(ChargingSession.objects.filter(booking=booking).exists())
+
+        # Admin visits booking list again: booking must DISAPPEAR from checked-in queue
+        resp_after = self.client.get(reverse('bookings:admin_booking_list'))
+        content_after = resp_after.content.decode()
+        self.assertNotIn('Checked-In - Awaiting Session Start', content_after)
+
+    def test_search_box_valid_id_filters_to_just_that_row(self):
+        """5. Search box: type a valid booking ID -> list filters to just that row"""
+        b1 = Booking.objects.create(
+            user=self.driver1,
+            station=self.station,
+            charger=self.charger,
+            slot=self.slot1,
+            booking_date=self.test_date,
+            booking_time=self.slot1.start_time,
+            status='Confirmed'
+        )
+        b2 = Booking.objects.create(
+            user=self.driver2,
+            station=self.station,
+            charger=self.charger,
+            slot=self.slot2,
+            booking_date=self.test_date,
+            booking_time=self.slot2.start_time,
+            status='Confirmed'
+        )
+
+        self.client.login(username='test_admin', password='password123')
+        resp = self.client.get(reverse('bookings:admin_booking_list') + f'?search={b1.id}')
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+
+        # Row for b1 is present
+        self.assertIn(f'#{b1.id}', content)
+        self.assertIn(self.driver1.username, content)
+
+        # Row for b2 is NOT present
+        self.assertNotIn(f'#{b2.id}', content)
+        self.assertNotIn(self.driver2.username, content)
+
+        # Search box retains value and Clear button is visible
+        self.assertIn(f'value="{b1.id}"', content)
+        self.assertIn('Clear', content)
+
+    def test_search_box_invalid_or_non_numeric_returns_empty_without_crash(self):
+        """6. Search box: type invalid/non-numeric -> empty result, no crash"""
+        Booking.objects.create(
+            user=self.driver1,
+            station=self.station,
+            charger=self.charger,
+            slot=self.slot1,
+            booking_date=self.test_date,
+            booking_time=self.slot1.start_time,
+            status='Confirmed'
+        )
+
+        self.client.login(username='test_admin', password='password123')
+
+        # Non-numeric text
+        resp_str = self.client.get(reverse('bookings:admin_booking_list') + '?search=invalid_text')
+        self.assertEqual(resp_str.status_code, 200)
+        self.assertIn('No bookings found.', resp_str.content.decode())
+
+        # Negative number
+        resp_neg = self.client.get(reverse('bookings:admin_booking_list') + '?search=-5')
+        self.assertEqual(resp_neg.status_code, 200)
+        self.assertIn('No bookings found.', resp_neg.content.decode())
+
+        # Non-existent numeric ID
+        resp_missing = self.client.get(reverse('bookings:admin_booking_list') + '?search=999999')
+        self.assertEqual(resp_missing.status_code, 200)
+        self.assertIn('No bookings found.', resp_missing.content.decode())
+
+    def test_clear_search_returns_full_list(self):
+        """7. Clear search -> full list returns"""
+        b1 = Booking.objects.create(
+            user=self.driver1,
+            station=self.station,
+            charger=self.charger,
+            slot=self.slot1,
+            booking_date=self.test_date,
+            booking_time=self.slot1.start_time,
+            status='Confirmed'
+        )
+        b2 = Booking.objects.create(
+            user=self.driver2,
+            station=self.station,
+            charger=self.charger,
+            slot=self.slot2,
+            booking_date=self.test_date,
+            booking_time=self.slot2.start_time,
+            status='Confirmed'
+        )
+
+        self.client.login(username='test_admin', password='password123')
+
+        # First search for b1
+        resp_searched = self.client.get(reverse('bookings:admin_booking_list') + f'?search={b1.id}')
+        content_searched = resp_searched.content.decode()
+        self.assertIn(f'#{b1.id}', content_searched)
+        self.assertNotIn(f'#{b2.id}', content_searched)
+        self.assertIn('Clear', content_searched)
+
+        # Clear search by navigating back to admin_booking_list
+        resp_cleared = self.client.get(reverse('bookings:admin_booking_list'))
+        content_cleared = resp_cleared.content.decode()
+        self.assertIn(f'#{b1.id}', content_cleared)
+        self.assertIn(f'#{b2.id}', content_cleared)
+
+
+
