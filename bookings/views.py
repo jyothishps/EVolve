@@ -103,18 +103,14 @@ def booking_list(request):
 
 @login_required
 def booking_detail(request, booking_id):
-    """
-    Show one booking's full details. Ownership check: a driver
-    can only view their own booking, not someone else's by guessing the URL id.
-    """
-    expire_overdue_bookings()
     booking = get_object_or_404(Booking, id=booking_id)
 
     if booking.user != request.user and not request.user.is_admin():
         messages.error(request, 'You are not authorized to view this booking.')
         return redirect('bookings:booking_list')
 
-    return render(request, 'bookings/booking_detail.html', {'booking': booking})
+    session = ChargingSession.objects.filter(booking=booking).first()
+    return render(request, 'bookings/booking_detail.html', {'booking': booking, 'session': session})
 
 
 @login_required

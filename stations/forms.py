@@ -6,10 +6,9 @@ from django.core.exceptions import ValidationError
 class StationForm(forms.ModelForm):
     class Meta:
         model = Station
-        fields = [
-            'station_code', 'name', 'address', 'latitude', 'longitude',
-            'location_type', 'number_of_chargers', 'status', 'description'
-        ]
+        fields = ['station_code', 'name', 'address', 'latitude', 'longitude',
+                  'location_type', 'number_of_chargers', 'status', 'description',
+                  'price_per_kWh']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

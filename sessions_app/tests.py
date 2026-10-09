@@ -6,6 +6,7 @@ from stations.models import Station, Charger, ChargingSlot
 from bookings.models import Booking
 from sessions_app.models import ChargingSession
 import datetime
+from decimal import Decimal
 
 
 class ChargingSessionStep6Tests(TestCase):
@@ -273,3 +274,362 @@ class ChargingSessionStep6Tests(TestCase):
         # Verify no sessions were created
         self.assertEqual(ChargingSession.objects.filter(booking=self.booking_pending).count(), 0)
         self.assertEqual(ChargingSession.objects.filter(booking=self.booking_cancelled).count(), 0)
+
+
+class Step6BillingAndPaymentTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+        self.admin_user = User.objects.create_user(
+            username='admin_test',
+            password='Password123!',
+            email='admin@test.com',
+            role='ADMIN'
+        )
+        self.driver_user = User.objects.create_user(
+            username='driver_test',
+            password='Password123!',
+            email='driver@test.com',
+            role='DRIVER'
+        )
+
+        self.station = Station.objects.create(
+            station_code='ST001',
+            name='Central Station',
+            address='123 Main St',
+            latitude=12.9716,
+            longitude=77.5946,
+            location_type='City Center',
+            number_of_chargers=1,
+            price_per_kWh=Decimal('18.00'),
+            status='Active'
+        )
+
+        self.charger = Charger.objects.create(
+            station=self.station,
+            charging_power_kW=50.0,
+            connector_type='CCS2',
+            status='Available'
+        )
+
+        self.slot = ChargingSlot.objects.create(
+            station=self.station,
+            charger=self.charger,
+            date=timezone.localdate(),
+            start_time=datetime.time(10, 0),
+            end_time=datetime.time(11, 0),
+            status='Reserved'
+        )
+
+        self.booking = Booking.objects.create(
+            user=self.driver_user,
+            station=self.station,
+            charger=self.charger,
+            slot=self.slot,
+            booking_date=timezone.localdate(),
+            booking_time=datetime.time(10, 0),
+            status='Confirmed'
+        )
+
+    def test_1_edit_station_shows_price_per_kwh_and_can_change_it(self):
+        """1. Edit a station: form shows Price per kWh and it can be changed."""
+        self.client.login(username='admin_test', password='Password123!')
+        edit_url = reverse('stations:station_edit', args=[self.station.id])
+        get_resp = self.client.get(edit_url)
+        self.assertEqual(get_resp.status_code, 200)
+        content = get_resp.content.decode()
+        self.assertIn('Price per kWh', content)
+        self.assertIn('18.00', content)
+
+        data = {
+            'station_code': self.station.station_code,
+            'name': self.station.name,
+            'address': self.station.address,
+            'latitude': self.station.latitude,
+            'longitude': self.station.longitude,
+            'location_type': self.station.location_type,
+            'number_of_chargers': self.station.number_of_chargers,
+            'status': self.station.status,
+            'price_per_kWh': '22.50',
+            'description': '',
+        }
+        post_resp = self.client.post(edit_url, data=data, follow=True)
+        self.assertEqual(post_resp.status_code, 200)
+
+        self.station.refresh_from_db()
+        self.assertEqual(self.station.price_per_kWh, Decimal('22.50'))
+
+    def test_2_session_complete_generates_bill_message(self):
+        """2. Complete session: message shows bill, e.g. 50 kWh x 18 = 900.00."""
+        session = ChargingSession.objects.create(
+            booking=self.booking,
+            station=self.station,
+            charger=self.charger,
+            timestamp=timezone.now(),
+            actual_load=45.0,
+            charging_power_kW=50.0,
+            duration=1.0,
+            energy_kWh=50.0,
+            traffic_density=0,
+            weather_condition='Clear'
+        )
+
+        self.client.login(username='admin_test', password='Password123!')
+        complete_url = reverse('sessions_app:session_complete', args=[session.id])
+        resp = self.client.post(complete_url, follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        content = resp.content.decode()
+        self.assertIn('Session completed. Bill generated: Rs. 900.00. Collect payment at the station.', content)
+
+        session.refresh_from_db()
+        updated_booking = Booking.objects.get(id=self.booking.id)
+        self.assertEqual(updated_booking.status, 'Completed')
+        self.assertEqual(session.amount, Decimal('900.00'))
+        self.assertEqual(session.price_per_kWh_applied, Decimal('18.00'))
+        self.assertEqual(session.payment_status, 'Unpaid')
+
+    def test_3_session_detail_billing_card_shows_details_and_red_unpaid_badge(self):
+        """3. Session detail: Billing card shows energy, rate, total and red Unpaid badge."""
+        session = ChargingSession.objects.create(
+            booking=self.booking,
+            station=self.station,
+            charger=self.charger,
+            timestamp=timezone.now(),
+            actual_load=45.0,
+            charging_power_kW=50.0,
+            duration=1.0,
+            energy_kWh=50.0,
+            price_per_kWh_applied=Decimal('18.00'),
+            amount=Decimal('900.00'),
+            payment_status='Unpaid',
+            traffic_density=0,
+            weather_condition='Clear'
+        )
+        self.booking.status = 'Completed'
+        self.booking.save()
+
+        self.client.login(username='admin_test', password='Password123!')
+        resp = self.client.get(reverse('sessions_app:session_detail', args=[session.id]))
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+
+        self.assertIn('50.0 kWh', content)
+        self.assertIn('Rs. 18.00 per kWh', content)
+        self.assertIn('Total: Rs. 900.00', content)
+        self.assertIn('badge bg-danger', content)
+        self.assertIn('Unpaid', content)
+
+    def test_4_pick_method_and_mark_paid_turns_badge_green(self):
+        """4. Pick method and click Mark as Paid -> badge turns green, shows method and time."""
+        session = ChargingSession.objects.create(
+            booking=self.booking,
+            station=self.station,
+            charger=self.charger,
+            timestamp=timezone.now(),
+            actual_load=45.0,
+            charging_power_kW=50.0,
+            duration=1.0,
+            energy_kWh=50.0,
+            price_per_kWh_applied=Decimal('18.00'),
+            amount=Decimal('900.00'),
+            payment_status='Unpaid',
+            traffic_density=0,
+            weather_condition='Clear'
+        )
+        self.booking.status = 'Completed'
+        self.booking.save()
+
+        self.client.login(username='admin_test', password='Password123!')
+        mark_paid_url = reverse('sessions_app:session_mark_paid', args=[session.id])
+        resp = self.client.post(mark_paid_url, data={'payment_method': 'UPI'}, follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        content = resp.content.decode()
+        self.assertIn('Payment of Rs. 900.00 recorded via UPI.', content)
+        self.assertIn('badge bg-success', content)
+        self.assertIn('Paid', content)
+        self.assertIn('Method:</strong> UPI', content)
+        self.assertIn('Paid at:', content)
+
+        session.refresh_from_db()
+        self.assertEqual(session.payment_status, 'Paid')
+        self.assertEqual(session.payment_method, 'UPI')
+        self.assertIsNotNone(session.paid_at)
+
+    def test_5_mark_paid_again_refused(self):
+        """5. Click Mark as Paid again: refused with 'already paid'."""
+        session = ChargingSession.objects.create(
+            booking=self.booking,
+            station=self.station,
+            charger=self.charger,
+            timestamp=timezone.now(),
+            actual_load=45.0,
+            charging_power_kW=50.0,
+            duration=1.0,
+            energy_kWh=50.0,
+            price_per_kWh_applied=Decimal('18.00'),
+            amount=Decimal('900.00'),
+            payment_status='Paid',
+            payment_method='UPI',
+            paid_at=timezone.now(),
+            traffic_density=0,
+            weather_condition='Clear'
+        )
+        self.booking.status = 'Completed'
+        self.booking.save()
+
+        self.client.login(username='admin_test', password='Password123!')
+        mark_paid_url = reverse('sessions_app:session_mark_paid', args=[session.id])
+        resp = self.client.post(mark_paid_url, data={'payment_method': 'Cash'}, follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        content = resp.content.decode()
+        self.assertIn('This session is already marked as paid.', content)
+
+    def test_6_driver_booking_ticket_shows_bill_and_status(self):
+        """6. Driver's booking ticket for completed booking shows bill and Paid/Unpaid badge."""
+        session = ChargingSession.objects.create(
+            booking=self.booking,
+            station=self.station,
+            charger=self.charger,
+            timestamp=timezone.now(),
+            actual_load=45.0,
+            charging_power_kW=50.0,
+            duration=1.0,
+            energy_kWh=50.0,
+            price_per_kWh_applied=Decimal('18.00'),
+            amount=Decimal('900.00'),
+            payment_status='Unpaid',
+            traffic_density=0,
+            weather_condition='Clear'
+        )
+        self.booking.status = 'Completed'
+        self.booking.save()
+
+        self.client.login(username='driver_test', password='Password123!')
+        ticket_url = reverse('bookings:booking_detail', args=[self.booking.id])
+        resp = self.client.get(ticket_url)
+        self.assertEqual(resp.status_code, 200)
+
+        content = resp.content.decode()
+        self.assertIn('Bill', content)
+        self.assertIn('Energy: 50.0 kWh x Rs. 18.00', content)
+        self.assertIn('Total: Rs. 900.00', content)
+        self.assertIn('Unpaid - pay at the station', content)
+
+        # Now mark as paid and check again
+        session.mark_paid('Card')
+        resp_paid = self.client.get(ticket_url)
+        content_paid = resp_paid.content.decode()
+        self.assertIn('Paid via Card', content_paid)
+
+    def test_7_tariff_change_does_not_rewrite_old_bills(self):
+        """7. Change station tariff afterwards: old session's bill stays the same."""
+        session = ChargingSession.objects.create(
+            booking=self.booking,
+            station=self.station,
+            charger=self.charger,
+            timestamp=timezone.now(),
+            actual_load=45.0,
+            charging_power_kW=50.0,
+            duration=1.0,
+            energy_kWh=50.0,
+            price_per_kWh_applied=Decimal('18.00'),
+            amount=Decimal('900.00'),
+            payment_status='Unpaid',
+            traffic_density=0,
+            weather_condition='Clear'
+        )
+        self.station.price_per_kWh = Decimal('30.00')
+        self.station.save()
+
+        session.refresh_from_db()
+        self.assertEqual(session.amount, Decimal('900.00'))
+        self.assertEqual(session.price_per_kWh_applied, Decimal('18.00'))
+
+    def test_8_session_list_shows_amount_and_payment_columns(self):
+        """8. Session list shows Amount and Payment columns."""
+        ChargingSession.objects.create(
+            booking=self.booking,
+            station=self.station,
+            charger=self.charger,
+            timestamp=timezone.now(),
+            actual_load=45.0,
+            charging_power_kW=50.0,
+            duration=1.0,
+            energy_kWh=50.0,
+            price_per_kWh_applied=Decimal('18.00'),
+            amount=Decimal('900.00'),
+            payment_status='Paid',
+            payment_method='UPI',
+            traffic_density=0,
+            weather_condition='Clear'
+        )
+        self.booking.status = 'Completed'
+        self.booking.save()
+
+        self.client.login(username='admin_test', password='Password123!')
+        resp = self.client.get(reverse('sessions_app:session_list'))
+        self.assertEqual(resp.status_code, 200)
+
+        content = resp.content.decode()
+        self.assertIn('<th>Amount</th>', content)
+        self.assertIn('<th>Payment</th>', content)
+        self.assertIn('Rs. 900.00', content)
+        self.assertIn('badge bg-success', content)
+        self.assertIn('Paid', content)
+
+    def test_9_driver_account_denied_mark_paid(self):
+        """9. Driver account hitting /sessions/1/mark-paid/ is denied."""
+        session = ChargingSession.objects.create(
+            booking=self.booking,
+            station=self.station,
+            charger=self.charger,
+            timestamp=timezone.now(),
+            actual_load=45.0,
+            charging_power_kW=50.0,
+            duration=1.0,
+            energy_kWh=50.0,
+            price_per_kWh_applied=Decimal('18.00'),
+            amount=Decimal('900.00'),
+            payment_status='Unpaid',
+            traffic_density=0,
+            weather_condition='Clear'
+        )
+        self.booking.status = 'Completed'
+        self.booking.save()
+
+        self.client.login(username='driver_test', password='Password123!')
+        resp = self.client.post(reverse('sessions_app:session_mark_paid', args=[session.id]), data={'payment_method': 'Cash'}, follow=True)
+        self.assertIn('Access denied. Admins only.', resp.content.decode())
+
+    def test_10_mark_paid_refused_if_booking_not_completed(self):
+        """10. Mark Paid on a session whose booking is not Completed is refused."""
+        session = ChargingSession.objects.create(
+            booking=self.booking,
+            station=self.station,
+            charger=self.charger,
+            timestamp=timezone.now(),
+            actual_load=45.0,
+            charging_power_kW=50.0,
+            duration=1.0,
+            energy_kWh=50.0,
+            price_per_kWh_applied=Decimal('18.00'),
+            amount=Decimal('900.00'),
+            payment_status='Unpaid',
+            traffic_density=0,
+            weather_condition='Clear'
+        )
+        self.assertEqual(self.booking.status, 'Confirmed')
+
+        self.client.login(username='admin_test', password='Password123!')
+        mark_paid_url = reverse('sessions_app:session_mark_paid', args=[session.id])
+        resp = self.client.post(mark_paid_url, data={'payment_method': 'Cash'}, follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        content = resp.content.decode()
+        self.assertIn('Complete the session before recording payment.', content)
+        session.refresh_from_db()
+        self.assertEqual(session.payment_status, 'Unpaid')
+

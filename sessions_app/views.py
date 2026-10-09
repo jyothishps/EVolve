@@ -112,9 +112,9 @@ def session_detail(request, session_id):
 @admin_required
 def session_complete(request, session_id):
     """
-    Admin marks session as complete:
-    - Booking status -> Completed
-    - ChargingSlot status -> Completed
+    Admin marks session complete:
+    - Booking and slot become Completed
+    - Bill is generated (energy_kWh x station tariff), payment status Unpaid
     """
     session = get_object_or_404(ChargingSession, id=session_id)
 
@@ -124,8 +124,42 @@ def session_complete(request, session_id):
 
     if request.method == 'POST':
         with transaction.atomic():
-            session.complete_session()  # model method: updates booking + slot status
-        messages.success(request, 'Session completed. Booking and slot marked Completed.')
+            session.complete_session()
+            session.generate_bill()
+        messages.success(
+            request,
+            f'Session completed. Bill generated: Rs. {session.amount}. Collect payment at the station.'
+        )
         return redirect('sessions_app:session_detail', session_id=session.id)
 
+    return redirect('sessions_app:session_detail', session_id=session.id)
+
+
+@admin_required
+def session_mark_paid(request, session_id):
+    """
+    Admin records that the driver paid at the station.
+    Only for completed sessions that are still Unpaid. POST only.
+    """
+    session = get_object_or_404(ChargingSession, id=session_id)
+
+    if request.method != 'POST':
+        return redirect('sessions_app:session_detail', session_id=session.id)
+
+    if session.booking.status != 'Completed':
+        messages.error(request, 'Complete the session before recording payment.')
+        return redirect('sessions_app:session_detail', session_id=session.id)
+
+    if session.payment_status == 'Paid':
+        messages.info(request, 'This session is already marked as paid.')
+        return redirect('sessions_app:session_detail', session_id=session.id)
+
+    method = request.POST.get('payment_method')
+    valid_methods = dict(ChargingSession.PAYMENT_METHOD_CHOICES).keys()
+    if method not in valid_methods:
+        messages.error(request, 'Please choose a valid payment method.')
+        return redirect('sessions_app:session_detail', session_id=session.id)
+
+    session.mark_paid(method)
+    messages.success(request, f'Payment of Rs. {session.amount} recorded via {method}.')
     return redirect('sessions_app:session_detail', session_id=session.id)

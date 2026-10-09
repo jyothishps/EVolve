@@ -22,6 +22,10 @@ class Station(models.Model):
     number_of_chargers = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='Active')
     description = models.TextField(blank=True)
+    price_per_kWh = models.DecimalField(
+        max_digits=6, decimal_places=2, default=18.00,
+        help_text="Tariff in rupees per kWh, used to bill completed sessions"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def check_availability(self):

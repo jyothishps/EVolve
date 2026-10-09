@@ -51,6 +51,18 @@
             <p class="text-success"><strong>✓ Checked in at {{ booking.checked_in_at }}</strong></p>
         {% endif %}
 
+        {% if session and booking.status == 'Completed' %}
+            <div class="ticket-divider"></div>
+            <p class="mb-1"><strong>Bill</strong></p>
+            <p class="mb-1">Energy: {{ session.energy_kWh }} kWh x Rs. {{ session.price_per_kWh_applied }}</p>
+            <p class="mb-1"><strong>Total: Rs. {{ session.amount }}</strong></p>
+            {% if session.payment_status == 'Paid' %}
+                <span class="badge bg-success">Paid via {{ session.payment_method }}</span>
+            {% else %}
+                <span class="badge bg-danger">Unpaid - pay at the station</span>
+            {% endif %}
+        {% endif %}
+
         <div id="qrcode"></div>
         <p class="text-center text-muted"><small>Show this ticket at the station</small></p>
 
