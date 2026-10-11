@@ -40,3 +40,12 @@ DEFAULT_WEATHER = 'Clear'          # Clear / Cloudy / Rainy
 
 # lag_1..3 and rolling_5/10 need the last 10 loads of the station
 HISTORY_WINDOW = 10
+
+# Vehicle inputs (driver can adjust on station page). Ranges match training data.
+VEHICLE_TYPES = ['Car', 'Two-Wheeler', 'Bus']
+BATTERY_RANGE_KWH = (30, 100)
+INITIAL_SOC_RANGE = (10, 60)
+
+# Recommendation rules
+LEVEL_RANK = {'Low': 0, 'Normal': 1, 'Peak': 2}
+TIE_MARGIN_KW = 3   # slots within 3 kW of the lowest load count as equally good

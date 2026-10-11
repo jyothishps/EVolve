@@ -1,7 +1,8 @@
 import pandas as pd
 from .config import (
     SUPPORTED_STATIONS, LOCATION_TYPE_MAP, DEFAULT_LOCATION_CODE,
-    DEFAULT_WEATHER, TRAFFIC_LABELS, classify_load,
+    DEFAULT_WEATHER, DEFAULT_BATTERY_KWH, DEFAULT_INITIAL_SOC,
+    TRAFFIC_LABELS, classify_load,
 )
 from .model_loader import get_model_bundle, ModelNotAvailable
 from .data_loader import get_recent_loads, HistoryUnavailable
@@ -16,12 +17,17 @@ def _location_code(station):
     return LOCATION_TYPE_MAP.get((station.location_type or '').strip().lower(), DEFAULT_LOCATION_CODE)
 
 
-def predict_slots(slots):
+def predict_slots(slots, vehicle=None):
     """
     Predict station load (kW) for many slots in ONE model call.
-    Returns {slot.id: result}. Never raises - unsupported stations or
-    a missing model come back as available=False with a message.
+    vehicle = optional dict: vehicle_type, battery_kwh, initial_soc.
+    Returns {slot.id: result}. Never raises.
     """
+    vehicle = vehicle or {}
+    vehicle_type = vehicle.get('vehicle_type', 'Car')
+    battery = vehicle.get('battery_kwh', DEFAULT_BATTERY_KWH)
+    soc = vehicle.get('initial_soc', DEFAULT_INITIAL_SOC)
+
     results = {}
     slots = list(slots)
 
@@ -41,6 +47,7 @@ def predict_slots(slots):
             rows.append(build_features(
                 code, slot.date, slot.start_time, slot.charger.charging_power_kW,
                 _location_code(slot.station), loads, feature_columns,
+                vehicle_type=vehicle_type, battery_kwh=battery, initial_soc=soc,
             ))
             ids.append(slot.id)
         except (HistoryUnavailable, FeatureError) as e:

@@ -9,6 +9,9 @@ from bookings.utils import expire_overdue_bookings
 from django.utils import timezone
 from bookings.models import Booking
 from ml_prediction.predictor import predict_slots
+from django.utils import timezone
+from ml_prediction.config import VEHICLE_TYPES, BATTERY_RANGE_KWH, INITIAL_SOC_RANGE, DEFAULT_BATTERY_KWH, DEFAULT_INITIAL_SOC
+from ml_prediction.recommender import rank_slots
 
 # ---------- STATION MANAGEMENT (ADMIN) ----------
 
@@ -148,30 +151,59 @@ def driver_station_list(request):
     stations = Station.objects.filter(status='Active').order_by('station_code')
     return render(request, 'stations/station_list.html', {'stations': stations})
 
+def _read_vehicle_inputs(request):
+    """Read optional vehicle inputs from the query string; clamp to training ranges."""
+    vehicle_type = request.GET.get('vehicle_type', 'Car')
+    if vehicle_type not in VEHICLE_TYPES:
+        vehicle_type = 'Car'
+
+    def number(name, default, low, high):
+        try:
+            value = float(request.GET.get(name, default))
+        except (TypeError, ValueError):
+            value = default
+        return max(low, min(high, value))
+
+    return {
+        'vehicle_type': vehicle_type,
+        'battery_kwh': number('battery_kwh', DEFAULT_BATTERY_KWH, *BATTERY_RANGE_KWH),
+        'initial_soc': number('initial_soc', DEFAULT_INITIAL_SOC, *INITIAL_SOC_RANGE),
+    }
+
 
 @login_required
 def driver_station_detail(request, station_id):
     expire_overdue_bookings()
     station = get_object_or_404(Station, id=station_id)
     chargers = Charger.objects.filter(station=station)
+
+    # Only future slots are worth recommending
     available_slots = list(
-        ChargingSlot.objects.filter(station=station, status='Available')
-        .select_related('station', 'charger')
-        .order_by('date', 'start_time')
+        ChargingSlot.objects.filter(
+            station=station, status='Available', date__gte=timezone.localdate()
+        ).select_related('station', 'charger').order_by('date', 'start_time')
     )
 
-    # One model call for all slots; each slot gets its own prediction dict
-    predictions = predict_slots(available_slots)
+    vehicle = _read_vehicle_inputs(request)
+    predictions = predict_slots(available_slots, vehicle)
     for slot in available_slots:
         slot.prediction = predictions[slot.id]
+
+    ranked_slots, best_slot = rank_slots(available_slots)
 
     context = {
         'station': station,
         'chargers': chargers,
-        'available_slots': available_slots,
+        'available_slots': ranked_slots,
+        'best_slot': best_slot,
+        'vehicle': vehicle,
+        'vehicle_types': VEHICLE_TYPES,
+        'battery_min': BATTERY_RANGE_KWH[0],
+        'battery_max': BATTERY_RANGE_KWH[1],
+        'soc_min': INITIAL_SOC_RANGE[0],
+        'soc_max': INITIAL_SOC_RANGE[1],
     }
     return render(request, 'stations/station_detail.html', context)
-
 
 @admin_required
 def slot_reopen(request, slot_id):
@@ -200,3 +232,4 @@ def slot_reopen(request, slot_id):
     else:
         messages.success(request, 'Slot reopened and available for booking.')
     return redirect('stations:slot_list')
+

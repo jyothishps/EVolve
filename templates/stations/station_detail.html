@@ -41,6 +41,44 @@
 <hr>
 
 <h4>Available Slots</h4>
+
+<form method="get" class="card card-body mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label mb-0">My vehicle</label>
+            <select name="vehicle_type" class="form-select">
+                {% for v in vehicle_types %}
+                    <option value="{{ v }}" {% if vehicle.vehicle_type == v %}selected{% endif %}>{{ v }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label mb-0">Battery (kWh)</label>
+            <input type="number" name="battery_kwh" class="form-control"
+                   min="{{ battery_min }}" max="{{ battery_max }}" step="1" value="{{ vehicle.battery_kwh|floatformat:0 }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label mb-0">Current charge (%)</label>
+            <input type="number" name="initial_soc" class="form-control"
+                   min="{{ soc_min }}" max="{{ soc_max }}" step="1" value="{{ vehicle.initial_soc|floatformat:0 }}">
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-outline-primary w-100">Update prediction</button>
+        </div>
+    </div>
+    <small class="text-muted mt-2">Optional. Defaults are dataset averages. Vehicle details change the prediction only slightly.</small>
+</form>
+
+{% if best_slot %}
+<div class="alert alert-success">
+    <strong>Recommended slot:</strong>
+    {{ best_slot.date }}, {{ best_slot.start_time }} - {{ best_slot.end_time }}
+    (Charger #{{ best_slot.charger.id }}) &middot;
+    predicted station load {{ best_slot.prediction.load_kw }} kW ({{ best_slot.prediction.level }})
+    <a href="{% url 'bookings:booking_create' best_slot.id %}" class="btn btn-sm btn-success ms-2">Book this slot</a>
+</div>
+{% endif %}
+
 <table class="table table-bordered bg-white">
     <thead class="table-dark">
         <tr>
@@ -48,12 +86,13 @@
             <th>Time</th>
             <th>Charger</th>
             <th>Predicted Station Load</th>
+            <th>Advice</th>
             <th>Action</th>
         </tr>
     </thead>
     <tbody>
         {% for slot in available_slots %}
-        <tr>
+        <tr {% if slot.tag == 'Recommended' %}class="table-success"{% elif slot.tag == 'Avoid' %}class="table-danger"{% endif %}>
             <td>{{ slot.date }}</td>
             <td>{{ slot.start_time }} - {{ slot.end_time }}</td>
             <td>Charger #{{ slot.charger.id }} ({{ slot.charger.charging_power_kW }} kW)</td>
@@ -68,17 +107,22 @@
                 {% endif %}
             </td>
             <td>
+                {% if slot.tag == 'Recommended' %}<strong class="text-success">Recommended</strong>
+                {% elif slot.tag == 'Avoid' %}<strong class="text-danger">Avoid if possible</strong>
+                {% else %}<span class="text-muted">-</span>{% endif %}
+            </td>
+            <td>
                 <a href="{% url 'bookings:booking_create' slot.id %}" class="btn btn-sm btn-primary">Book</a>
             </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="text-center text-muted">No available slots right now.</td></tr>
+        <tr><td colspan="6" class="text-center text-muted">No available slots right now.</td></tr>
         {% endfor %}
     </tbody>
 </table>
 <p class="text-muted"><small>
-    Predicted load is a machine-learning estimate (Random Forest). Traffic and weather inputs are
-    <strong>estimated</strong>, not live data.
+    Predicted load is a machine-learning estimate (Random Forest) of how busy the station will be.
+    Traffic and weather inputs are <strong>estimated</strong>, not live data. Slots are ranked Low, then Normal, then Peak.
 </small></p>
 
 
