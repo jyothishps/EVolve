@@ -47,6 +47,7 @@
             <th>Date</th>
             <th>Time</th>
             <th>Charger</th>
+            <th>Predicted Station Load</th>
             <th>Action</th>
         </tr>
     </thead>
@@ -57,14 +58,29 @@
             <td>{{ slot.start_time }} - {{ slot.end_time }}</td>
             <td>Charger #{{ slot.charger.id }} ({{ slot.charger.charging_power_kW }} kW)</td>
             <td>
+                {% if slot.prediction.available %}
+                    <span class="badge bg-{% if slot.prediction.level == 'Low' %}success{% elif slot.prediction.level == 'Normal' %}warning text-dark{% else %}danger{% endif %}">
+                        {{ slot.prediction.level }}
+                    </span>
+                    {{ slot.prediction.load_kw }} kW
+                {% else %}
+                    <small class="text-muted">{{ slot.prediction.message }}</small>
+                {% endif %}
+            </td>
+            <td>
                 <a href="{% url 'bookings:booking_create' slot.id %}" class="btn btn-sm btn-primary">Book</a>
             </td>
         </tr>
         {% empty %}
-        <tr><td colspan="4" class="text-center text-muted">No available slots right now.</td></tr>
+        <tr><td colspan="5" class="text-center text-muted">No available slots right now.</td></tr>
         {% endfor %}
     </tbody>
 </table>
+<p class="text-muted"><small>
+    Predicted load is a machine-learning estimate (Random Forest). Traffic and weather inputs are
+    <strong>estimated</strong>, not live data.
+</small></p>
+
 
 <a href="{% url 'stations:driver_station_list' %}" class="btn btn-secondary">Back to Stations</a>
 {% endblock %}

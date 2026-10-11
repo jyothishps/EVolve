@@ -8,6 +8,7 @@ from .forms import StationForm, ChargerForm, ChargingSlotForm
 from bookings.utils import expire_overdue_bookings
 from django.utils import timezone
 from bookings.models import Booking
+from ml_prediction.predictor import predict_slots
 
 # ---------- STATION MANAGEMENT (ADMIN) ----------
 
@@ -153,9 +154,16 @@ def driver_station_detail(request, station_id):
     expire_overdue_bookings()
     station = get_object_or_404(Station, id=station_id)
     chargers = Charger.objects.filter(station=station)
-    available_slots = ChargingSlot.objects.filter(
-        station=station, status='Available'
-    ).order_by('date', 'start_time')
+    available_slots = list(
+        ChargingSlot.objects.filter(station=station, status='Available')
+        .select_related('station', 'charger')
+        .order_by('date', 'start_time')
+    )
+
+    # One model call for all slots; each slot gets its own prediction dict
+    predictions = predict_slots(available_slots)
+    for slot in available_slots:
+        slot.prediction = predictions[slot.id]
 
     context = {
         'station': station,
