@@ -814,4 +814,163 @@ class BookingTicketCheckinAndAdminQueueTests(TestCase):
         self.assertIn(f'#{b2.id}', content_cleared)
 
 
+class BookingPaymentGatewayAndInvoiceTests(TestCase):
+    def setUp(self):
+        from decimal import Decimal
+        from datetime import time
+        self.client = Client()
+
+        self.driver = User.objects.create_user(
+            username='paydriver',
+            password='password123',
+            email='paydriver@example.com',
+            role='DRIVER'
+        )
+        self.other_driver = User.objects.create_user(
+            username='otherdriver',
+            password='password123',
+            email='other@example.com',
+            role='DRIVER'
+        )
+        self.admin = User.objects.create_user(
+            username='payadmin',
+            password='password123',
+            email='payadmin@example.com',
+            role='ADMIN'
+        )
+
+        self.station = Station.objects.create(
+            station_code='ST_PAY',
+            name='Payment Test Station',
+            address='45 Electric Ave',
+            latitude=12.9716,
+            longitude=77.5946,
+            status='Active'
+        )
+        self.charger = Charger.objects.create(
+            station=self.station,
+            charging_power_kW=60.0,
+            connector_type='CCS2',
+            status='Available'
+        )
+        self.slot = ChargingSlot.objects.create(
+            station=self.station,
+            charger=self.charger,
+            date=timezone.localdate() + timedelta(days=1),
+            start_time=time(14, 0),
+            end_time=time(15, 0),
+            status='Available'
+        )
+
+    def test_booking_confirm_page_shows_gateway_and_breakdown(self):
+        """GET /bookings/create/<slot_id>/ shows simulated gateway, reservation fee, and payment methods."""
+        self.client.login(username='paydriver', password='password123')
+        resp = self.client.get(reverse('bookings:booking_create', args=[self.slot.id]))
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+        self.assertIn('Confirm & Pay Booking Fee', content)
+        self.assertIn('50.00', content)
+        self.assertIn('Simulated Gateway Active', content)
+        self.assertIn('UPI (GPay / PhonePe / QR)', content)
+        self.assertIn('Debit / Credit Card', content)
+
+    def test_booking_create_with_simulated_upi_payment(self):
+        """POST /bookings/create/<slot_id>/ with UPI payment confirms booking, marks Paid, and reserves slot."""
+        self.client.login(username='paydriver', password='password123')
+        data = {
+            'payment_method': 'UPI (Google Pay)',
+            'transaction_id': 'EV-TXN-UPI-TEST1234',
+        }
+        resp = self.client.post(reverse('bookings:booking_create', args=[self.slot.id]), data=data, follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('Booking confirmed successfully.', resp.content.decode())
+
+        self.slot.refresh_from_db()
+        self.assertEqual(self.slot.status, 'Reserved')
+
+        booking = Booking.objects.get(slot=self.slot, user=self.driver)
+        self.assertEqual(booking.status, 'Confirmed')
+        self.assertEqual(booking.payment_status, 'Paid')
+        self.assertEqual(booking.payment_method, 'UPI (Google Pay)')
+        self.assertEqual(booking.transaction_id, 'EV-TXN-UPI-TEST1234')
+        self.assertIsNotNone(booking.paid_at)
+
+    def test_booking_invoice_view_accessible_by_owner(self):
+        """GET /bookings/<id>/invoice/ renders tax invoice with bill breakdown."""
+        booking = Booking.objects.create(
+            user=self.driver,
+            station=self.station,
+            charger=self.charger,
+            slot=self.slot,
+            booking_date=self.slot.date,
+            booking_time=self.slot.start_time,
+            status='Confirmed',
+            payment_status='Paid',
+            payment_method='UPI',
+            transaction_id='EV-TXN-INVOICE-TEST',
+            paid_at=timezone.now(),
+        )
+
+        self.client.login(username='paydriver', password='password123')
+        resp = self.client.get(reverse('bookings:booking_invoice', args=[booking.id]))
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+        self.assertIn('Tax Invoice', content)
+        self.assertIn('INV-EV-', content)
+        self.assertIn('EV-TXN-INVOICE-TEST', content)
+        self.assertIn('50.00', content)
+        self.assertIn('PAID', content)
+
+    def test_booking_invoice_blocked_for_other_drivers(self):
+        """A different driver cannot view another driver's booking invoice."""
+        booking = Booking.objects.create(
+            user=self.driver,
+            station=self.station,
+            charger=self.charger,
+            slot=self.slot,
+            booking_date=self.slot.date,
+            booking_time=self.slot.start_time,
+            status='Confirmed',
+            payment_status='Paid',
+            payment_method='UPI',
+            transaction_id='EV-TXN-INVOICE-TEST',
+            paid_at=timezone.now(),
+        )
+
+        self.client.login(username='otherdriver', password='password123')
+        resp = self.client.get(reverse('bookings:booking_invoice', args=[booking.id]), follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('You are not authorized to view this invoice.', resp.content.decode())
+
+    def test_booking_cancellation_marks_payment_as_refunded(self):
+        """When a paid booking is cancelled, payment_status is set to Refunded and slot is freed."""
+        booking = Booking.objects.create(
+            user=self.driver,
+            station=self.station,
+            charger=self.charger,
+            slot=self.slot,
+            booking_date=self.slot.date,
+            booking_time=self.slot.start_time,
+            status='Confirmed',
+            payment_status='Paid',
+            payment_method='UPI',
+            transaction_id='EV-TXN-REFUND-TEST',
+            paid_at=timezone.now(),
+        )
+        self.slot.status = 'Reserved'
+        self.slot.save()
+
+        self.client.login(username='paydriver', password='password123')
+        resp = self.client.post(reverse('bookings:booking_cancel', args=[booking.id]), follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('Booking cancelled successfully.', resp.content.decode())
+
+        booking.refresh_from_db()
+        self.slot.refresh_from_db()
+        self.assertEqual(booking.status, 'Cancelled')
+        self.assertEqual(booking.payment_status, 'Refunded')
+        self.assertEqual(self.slot.status, 'Available')
+
+
+
 

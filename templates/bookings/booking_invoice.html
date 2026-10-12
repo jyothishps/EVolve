@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}Tax Invoice - Booking #{{ booking.id }} - EVolve{% endblock %}
+
+{% block extra_css %}
+<style>
+    .invoice-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        padding: 40px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .invoice-header-logo {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #0d6efd;
+        letter-spacing: 1px;
+    }
+    .invoice-badge-paid {
+        font-size: 1rem;
+        letter-spacing: 1px;
+        padding: 8px 16px;
+        border-radius: 30px;
+    }
+    @media print {
+        body {
+            background: #fff !important;
+        }
+        nav, .btn-print-hide, footer {
+            display: none !important;
+        }
+        .invoice-card {
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Top Action Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 btn-print-hide" style="max-width: 800px; margin: 0 auto;">
+        <a href="{% url 'bookings:booking_detail' booking.id %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Booking Ticket
+        </a>
+        <div>
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="bi bi-printer-fill me-1"></i>Print / Save as PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Invoice Sheet -->
+    <div class="invoice-card">
+        <!-- Top Header -->
+        <div class="row align-items-center mb-4 pb-4 border-bottom">
+            <div class="col-sm-7">
+                <div class="invoice-header-logo">
+                    <i class="bi bi-lightning-charge-fill text-warning me-1"></i>EVolve
+                </div>
+                <p class="text-muted small mb-0">Smart Electric Vehicle Charging & Reservation Platform</p>
+                <p class="text-muted small mb-0">support@evolve-charge.network | GSTIN: 29AABCE1234F1Z5</p>
+            </div>
+            <div class="col-sm-5 text-sm-end mt-3 mt-sm-0">
+                <h4 class="fw-bold mb-1 text-uppercase text-secondary">Tax Invoice</h4>
+                <p class="mb-1 text-muted small">Invoice #: <strong class="text-dark">INV-EV-{{ booking.booking_date|date:"Y" }}-{{ booking.id|stringformat:"04d" }}</strong></p>
+                <p class="mb-0 text-muted small">Date: <strong>{{ booking.paid_at|default:booking.created_at|date:"d M Y, h:i A" }}</strong></p>
+                <div class="mt-2">
+                    <span class="badge bg-success invoice-badge-paid">
+                        <i class="bi bi-check-circle-fill me-1"></i>{{ booking.payment_status|upper }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Billed To & Station Details -->
+        <div class="row mb-4">
+            <div class="col-sm-6 mb-3 mb-sm-0">
+                <h6 class="text-uppercase text-muted fw-bold small">Billed To (Driver)</h6>
+                <p class="fw-bold mb-1">{{ booking.user.get_full_name|default:booking.user.username }}</p>
+                <p class="text-muted small mb-1"><i class="bi bi-envelope me-1"></i>{{ booking.user.email }}</p>
+                <p class="text-muted small mb-0"><i class="bi bi-person-badge me-1"></i>Driver ID: #{{ booking.user.id }}</p>
+            </div>
+            <div class="col-sm-6">
+                <h6 class="text-uppercase text-muted fw-bold small">Charging Station Location</h6>
+                <p class="fw-bold mb-1">{{ booking.station.name }} ({{ booking.station.station_code }})</p>
+                <p class="text-muted small mb-1">{{ booking.station.address }}</p>
+                <p class="text-muted small mb-0">Charger #{{ booking.charger.id }} &bull; {{ booking.charger.charging_power_kW }} kW ({{ booking.charger.connector_type }})</p>
+            </div>
+        </div>
+
+        <!-- Reservation Details Table -->
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50%;">Service Description</th>
+                        <th class="text-center">Scheduled Slot</th>
+                        <th class="text-end">Amount (INR)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <strong>EV Charging Slot Reservation Fee</strong>
+                            <div class="text-muted small">
+                                Dedicated slot guarantee for Charger #{{ booking.charger.id }} at {{ booking.station.name }}.
+                            </div>
+                        </td>
+                        <td class="text-center align-middle">
+                            <div>{{ booking.booking_date|date:"d M Y" }}</div>
+                            <span class="badge bg-light text-dark border">{{ booking.booking_time|time:"H:i" }}</span>
+                        </td>
+                        <td class="text-end align-middle fw-bold">
+                            Rs. {{ booking.booking_fee|floatformat:2 }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Totals & Payment Breakdown -->
+        <div class="row justify-content-end mb-4">
+            <div class="col-sm-6">
+                <div class="bg-light p-3 rounded-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Subtotal</span>
+                        <span>Rs. {{ booking.booking_fee|floatformat:2 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-muted">
+                        <span>Convenience Fee / Gateway</span>
+                        <span>Rs. 0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-muted">
+                        <span>GST (0%)</span>
+                        <span>Rs. 0.00</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold fs-5">Total Paid</span>
+                        <span class="fw-bold fs-5 text-success">Rs. {{ booking.booking_fee|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Meta Information -->
+        <div class="border rounded-3 p-3 bg-light mb-4">
+            <div class="row g-2 small">
+                <div class="col-sm-4">
+                    <span class="text-muted d-block">Payment Method:</span>
+                    <strong>{{ booking.payment_method|default:"UPI" }}</strong>
+                </div>
+                <div class="col-sm-4">
+                    <span class="text-muted d-block">Transaction ID:</span>
+                    <strong class="font-monospace text-primary">{{ booking.transaction_id|default:"EV-TXN-SIMULATED" }}</strong>
+                </div>
+                <div class="col-sm-4">
+                    <span class="text-muted d-block">Booking Reference:</span>
+                    <strong>#{{ booking.id }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terms / Station Note -->
+        <div class="border-top pt-3 text-muted small">
+            <p class="mb-1"><strong>Terms & Instructions:</strong></p>
+            <ul class="mb-0 ps-3">
+                <li>Present your digital booking QR code at the charging station counter to check in.</li>
+                <li>Please arrive within the 15-minute grace window of your slot start time.</li>
+                <li>This invoice serves as your proof of payment for the reservation slot fee.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

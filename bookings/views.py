@@ -1,3 +1,6 @@
+import uuid
+from decimal import Decimal
+from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -7,15 +10,10 @@ from django.utils import timezone
 from stations.models import ChargingSlot
 from accounts.decorators import admin_required
 from .models import Booking
-from .utils import expire_overdue_bookings
-
-from sessions_app.models import ChargingSession
-
 from .utils import expire_overdue_bookings, get_slot_datetimes, CHECKIN_OPENS_MINUTES_BEFORE
-from datetime import timedelta
-from django.db import transaction
-from accounts.decorators import admin_required
 from sessions_app.models import ChargingSession
+
+DEFAULT_BOOKING_FEE = Decimal('50.00')
 
 @login_required
 def booking_create(request, slot_id):
@@ -65,6 +63,11 @@ def booking_create(request, slot_id):
                     messages.error(request, 'Sorry, this slot is no longer available.')
                     return redirect('stations:driver_station_detail', station_id=slot.station.id)
 
+                payment_method = request.POST.get('payment_method', 'UPI')
+                transaction_id = request.POST.get('transaction_id')
+                if not transaction_id:
+                    transaction_id = f"EV-TXN-{uuid.uuid4().hex[:10].upper()}"
+
                 booking = Booking.objects.create(
                     user=request.user,
                     station=locked_slot.station,
@@ -73,19 +76,31 @@ def booking_create(request, slot_id):
                     booking_date=locked_slot.date,
                     booking_time=locked_slot.start_time,
                     status='Confirmed',
+                    booking_fee=DEFAULT_BOOKING_FEE,
+                    payment_status='Paid',
+                    payment_method=payment_method,
+                    transaction_id=transaction_id,
+                    paid_at=timezone.now(),
                 )
 
                 locked_slot.status = 'Reserved'
                 locked_slot.save()
 
-            messages.success(request, 'Booking confirmed successfully.')
+            messages.success(
+                request,
+                f'Payment of Rs. {booking.booking_fee:.2f} received via {booking.payment_method}. Booking confirmed successfully.'
+            )
             return redirect('bookings:booking_detail', booking_id=booking.id)
 
         except IntegrityError:
             messages.error(request, 'This slot was already booked. Please choose another.')
             return redirect('stations:driver_station_detail', station_id=slot.station.id)
 
-    return render(request, 'bookings/booking_confirm.html', {'slot': slot})
+    return render(request, 'bookings/booking_confirm.html', {
+        'slot': slot,
+        'booking_fee': DEFAULT_BOOKING_FEE,
+    })
+
 
 
 @login_required
@@ -114,6 +129,19 @@ def booking_detail(request, booking_id):
 
 
 @login_required
+def booking_invoice(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if booking.user != request.user and not request.user.is_admin():
+        messages.error(request, 'You are not authorized to view this invoice.')
+        return redirect('bookings:booking_list')
+
+    return render(request, 'bookings/booking_invoice.html', {
+        'booking': booking,
+    })
+
+
+@login_required
 def booking_cancel(request, booking_id):
     """
     GET: show confirmation prompt ("are you sure?").
@@ -134,9 +162,13 @@ def booking_cancel(request, booking_id):
 
     if request.method == 'POST':
         with transaction.atomic():
-            booking.cancel_booking()  # model method - sets Cancelled + slot Available together
-        messages.success(request, 'Booking cancelled successfully.')
+            booking.cancel_booking()  # model method - sets Cancelled + slot Available together, refunds if Paid
+        if booking.payment_status == 'Refunded':
+            messages.success(request, f'Booking cancelled successfully. Reservation fee of Rs. {booking.booking_fee:.2f} refunded.')
+        else:
+            messages.success(request, 'Booking cancelled successfully.')
         return redirect('bookings:booking_list')
+
 
     return render(request, 'bookings/booking_detail.html', {'booking': booking, 'confirm_cancel': True})
 

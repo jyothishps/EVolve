@@ -11,6 +11,7 @@
             <th>Station</th>
             <th>Date</th>
             <th>Time</th>
+            <th>Booking Payment</th>
             <th>Status</th>
             <th>Actions</th>
         </tr>
@@ -23,16 +24,26 @@
             <td>{{ booking.booking_date }}</td>
             <td>{{ booking.booking_time }}</td>
             <td>
+                <span class="badge bg-{% if booking.payment_status == 'Paid' %}success{% elif booking.payment_status == 'Refunded' %}warning{% else %}secondary{% endif %}">
+                    Rs. {{ booking.booking_fee|floatformat:0 }} - {{ booking.payment_status }}
+                </span>
+            </td>
+            <td>
                 <span class="badge bg-{% if booking.status == 'Confirmed' %}success{% elif booking.status == 'Pending' %}warning{% elif booking.status == 'Completed' %}info{% else %}secondary{% endif %}">
                     {{ booking.status }}
                 </span>
             </td>
             <td>
                 <a href="{% url 'bookings:booking_detail' booking.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                {% if booking.payment_status == 'Paid' %}
+                <a href="{% url 'bookings:booking_invoice' booking.id %}" class="btn btn-sm btn-outline-secondary" title="View Bill">
+                    <i class="bi bi-receipt"></i> Bill
+                </a>
+                {% endif %}
             </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="text-center text-muted">No bookings yet.</td></tr>
+        <tr><td colspan="7" class="text-center text-muted">No bookings yet.</td></tr>
         {% endfor %}
     </tbody>
 </table>
