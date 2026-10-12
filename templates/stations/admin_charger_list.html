@@ -1,46 +1,192 @@
 {% extends 'base.html' %}
-{% block title %}Manage Chargers{% endblock %}
+{% block title %}Manage Chargers - Admin Cockpit{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Chargers</h2>
-    <a href="{% url 'stations:charger_add' %}" class="btn btn-primary">+ Add Charger</a>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span
+                class="badge bg-warning bg-opacity-20 text-warning border border-warning border-opacity-30 px-3 py-1 text-white">
+                <i class="bi bi-shield-lock-fill me-1"></i> Hardware Infrastructure
+            </span>
+            <span class="badge bg-white bg-opacity-10 text-slate-300">{{ chargers|length }} Hardware Units</span>
+        </div>
+        <h2 class="display-6 fw-bold text-white mb-0" style="letter-spacing: -0.02em;">Charger Units</h2>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'stations:charger_add' %}" class="btn btn-success px-3 shadow">
+            <i class="bi bi-plus-lg me-1"></i> Add Charger
+        </a>
+        <!-- <a href="{% url 'stations:station_list' %}" class="btn btn-outline-info">
+            <i class="bi bi-ev-station me-1"></i> Stations
+        </a>
+        <a href="{% url 'stations:slot_list' %}" class="btn btn-outline-primary">
+            <i class="bi bi-calendar3 me-1"></i> Slots
+        </a>
+        <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-outline-light">
+            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+        </a> -->
+    </div>
 </div>
 
-<table class="table table-bordered table-hover bg-white">
-    <thead class="table-dark">
-        <tr>
-            <th>ID</th>
-            <th>Station</th>
-            <th>Power (kW)</th>
-            <th>Connector</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for charger in chargers %}
-        <tr>
-            <td>{{ charger.id }}</td>
-            <td>{{ charger.station.station_code }}</td>
-            <td>{{ charger.charging_power_kW }}</td>
-            <td>{{ charger.connector_type }}</td>
-            <td>
-                <span class="badge bg-{% if charger.status == 'Available' %}success{% elif charger.status == 'Occupied' %}warning{% elif charger.status == 'Maintenance' %}secondary{% else %}dark{% endif %}">
-                    {{ charger.status }}
-                </span>
-            </td>
-            <td>
-                <a href="{% url 'stations:charger_edit' charger.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
-                <form method="post" action="{% url 'stations:charger_delete' charger.id %}" class="d-inline" onsubmit="return confirm('Delete this charger?');">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                </form>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="text-center text-muted">No chargers yet.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<!-- Charger Units Table -->
+<div class="card shadow-sm mb-4 overflow-hidden">
+    <div
+        class="card-header bg-transparent py-3 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center">
+
+        <span class="badge bg-white bg-opacity-10 text-slate-300 border border-white border-opacity-10 px-3 py-1">
+            {{ chargers|length }} Configured
+        </span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 100px;">Unit ID</th>
+                        <th>Charging Station</th>
+                        <th>Power Output</th>
+                        <th>Connector Standard</th>
+                        <th>Operational Status</th>
+                        <th class="text-end" style="width: 170px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for charger in chargers %}
+                    <tr>
+                        <!-- Unit ID -->
+                        <td>
+                            <span
+                                class="badge bg-dark border border-white border-opacity-15 font-monospace text-cyan px-2 py-1 fs-6">
+                                #{{ charger.id }}
+                            </span>
+                        </td>
+
+                        <!-- Station -->
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="rounded-circle p-2 bg-info bg-opacity-10 text-cyan d-inline-flex">
+                                    <i class="bi bi-ev-station"></i>
+                                </span>
+                                <div>
+                                    <a href="{% url 'stations:driver_station_detail' charger.station.id %}"
+                                        class="fw-bold text-white text-decoration-none">
+                                        {{ charger.station.name }}
+                                    </a>
+                                    <div class="text-muted small font-monospace">
+                                        Code: {{ charger.station.station_code }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Power Output -->
+                        <td>
+                            <div class="d-inline-flex align-items-center gap-2">
+                                <span
+                                    class="badge bg-primary bg-opacity-20 text-cyan border border-primary border-opacity-30 px-3 py-1 font-monospace fs-6">
+                                    <i class="bi bi-lightning-fill text-warning me-1"></i>{{ charger.charging_power_kW
+                                    }} kW
+                                </span>
+                                {% if charger.charging_power_kW >= 50 %}
+                                <span
+                                    class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 small">Rapid
+                                    DC</span>
+                                {% else %}
+                                <span class="badge bg-secondary bg-opacity-10 text-muted small">Fast AC</span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- Connector Standard -->
+                        <td>
+                            {% if charger.connector_type == 'CCS2' %}
+                            <span
+                                class="badge bg-info bg-opacity-20 text-info border border-info border-opacity-30 px-3 py-1 text-white">
+                                <i class="bi bi-plug me-1"></i>CCS2 (Combo 2)
+                            </span>
+                            {% elif charger.connector_type == 'CHAdeMO' %}
+                            <span
+                                class="badge bg-warning bg-opacity-20 text-warning border border-warning border-opacity-30 px-3 py-1 text-white">
+                                <i class="bi bi-plug me-1"></i>CHAdeMO
+                            </span>
+                            {% elif charger.connector_type == 'Type2' %}
+                            <span
+                                class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-30 px-3 py-1 text-white">
+                                <i class="bi bi-plug me-1"></i>Type 2 (Mennekes)
+                            </span>
+                            {% elif charger.connector_type == 'GB/T' %}
+                            <span
+                                class="badge bg-primary bg-opacity-20 text-primary border border-primary border-opacity-30 px-3 py-1 text-white">
+                                <i class="bi bi-plug me-1"></i>GB/T
+                            </span>
+                            {% else %}
+                            <span
+                                class="badge bg-secondary bg-opacity-20 text-slate-300 border border-secondary border-opacity-30 px-3 py-1 text-white">
+                                <i class="bi bi-plug me-1"></i>{{ charger.connector_type }}
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Status -->
+                        <td>
+                            {% if charger.status == 'Available' %}
+                            <span
+                                class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-30 px-3 py-1 text-white">
+                                <span class="beacon-dot beacon-success me-1"></span>Available
+                            </span>
+                            {% elif charger.status == 'Occupied' %}
+                            <span
+                                class="badge bg-warning bg-opacity-20 text-warning border border-warning border-opacity-30 px-3 py-1 text-white">
+                                <i class="bi bi-battery-charging me-1"></i>Occupied
+                            </span>
+                            {% elif charger.status == 'Maintenance' %}
+                            <span
+                                class="badge bg-danger bg-opacity-20 text-danger border border-danger border-opacity-30 px-3 py-1 text-white">
+                                <i class="bi bi-tools me-1"></i>Maintenance
+                            </span>
+                            {% else %}
+                            <span
+                                class="badge bg-secondary bg-opacity-20 text-muted border border-secondary border-opacity-30 px-3 py-1 text-white">
+                                <i class="bi bi-slash-circle me-1"></i>{{ charger.status }}
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="text-end">
+                            <a href="{% url 'stations:charger_edit' charger.id %}"
+                                class="btn btn-sm btn-outline-info py-1 px-2 me-1" title="Edit Charger">
+                                <i class="bi bi-pencil me-1"></i>Edit
+                            </a>
+                            <form method="post" action="{% url 'stations:charger_delete' charger.id %}" class="d-inline"
+                                onsubmit="return confirm('Are you sure you want to delete Charger #{{ charger.id }}?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2"
+                                    title="Delete Charger">
+                                    <i class="bi bi-trash me-1"></i>Delete
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <div class="mb-2">
+                                <i class="bi bi-lightning-charge fs-1 text-muted opacity-50"></i>
+                            </div>
+                            <div class="text-slate-300 fw-semibold mb-1">No chargers configured yet</div>
+                            <div class="small mb-3">Add your first high-speed charger unit to make slots available for
+                                drivers.</div>
+                            <a href="{% url 'stations:charger_add' %}" class="btn btn-success btn-sm px-3">
+                                <i class="bi bi-plus-lg me-1"></i> Add First Charger
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 {% endblock %}
