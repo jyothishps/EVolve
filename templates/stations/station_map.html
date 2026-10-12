@@ -1,48 +1,88 @@
 {% extends 'base.html' %}
-{% block title %}Station Map{% endblock %}
+{% block title %}Interactive Station Map - EVolve{% endblock %}
 
 {% block extra_css %}
 <meta name="referrer" content="no-referrer">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     #stationMap {
-        height: 520px;
+        height: 580px;
         width: 100%;
-        border-radius: 4px;
-        border: 1px solid #dee2e6;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-md);
+    }
+    .custom-ev-pin {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        width: 36px;
+        height: 36px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.45);
+        border: 2px solid #fff;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    .custom-ev-pin i {
+        transform: rotate(45deg);
+        color: #fff;
+        font-size: 1rem;
+    }
+    .custom-ev-pin:hover {
+        transform: rotate(-45deg) scale(1.15);
+    }
+    .leaflet-popup-content-wrapper {
+        border-radius: 14px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        padding: 4px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
-        <h2>Station Map</h2>
-        <p class="text-muted mb-0">Explore all active EV charging stations on the map.</p>
+        <h2 class="fw-bold mb-1"><i class="bi bi-geo-alt-fill text-primary me-2"></i>Live Station Map</h2>
+        <p class="text-muted mb-0">Explore all active EV charging stations on the interactive map.</p>
     </div>
-    <div>
+    <div class="d-flex gap-2">
         {% if user.is_authenticated %}
-            <a href="{% if user.is_admin %}{% url 'accounts:admin_dashboard' %}{% else %}{% url 'accounts:driver_dashboard' %}{% endif %}" class="btn btn-secondary">
-                Back to Dashboard
+            <a href="{% if user.is_admin %}{% url 'accounts:admin_dashboard' %}{% else %}{% url 'accounts:driver_dashboard' %}{% endif %}" class="btn btn-outline-secondary">
+                <i class="bi bi-speedometer2 me-1"></i>Back to Dashboard
             </a>
         {% else %}
-            <a href="{% url 'core:home' %}" class="btn btn-secondary">
-                Back to Home
+            <a href="{% url 'core:home' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-house me-1"></i>Back to Home
             </a>
         {% endif %}
+        <a href="{% url 'stations:driver_station_list' %}" class="btn btn-primary">
+            <i class="bi bi-list-ul me-1"></i>List View
+        </a>
     </div>
 </div>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-        <span class="fw-bold text-primary">
-            <i class="bi bi-geo-alt-fill me-1"></i>Active Charging Stations ({{ stations|length }})
-        </span>
-        <button id="resetMapBtn" class="btn btn-sm btn-outline-secondary">
-            Reset View
-        </button>
+<!-- Map Card with Search Overlay -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold text-primary">
+                <i class="bi bi-ev-station-fill me-1"></i>Active Charging Stations ({{ stations|length }})
+            </span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                <i class="bi bi-circle-fill text-success" style="font-size: 0.45rem;"></i> Live
+            </span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <input type="text" id="mapSearchInput" class="form-control form-control-sm" placeholder="Filter station name/code..." style="max-width: 220px;">
+            <button id="resetMapBtn" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrows-fullscreen me-1"></i>Reset View
+            </button>
+        </div>
     </div>
-    <div class="card-body p-0">
+    <div class="card-body p-0 position-relative">
         <div id="stationMap"></div>
     </div>
 </div>
@@ -62,9 +102,11 @@
     var stations = [
         {% for station in stations %}
         {
+            id: {{ station.id }},
             name: "{{ station.name|escapejs }}",
             code: "{{ station.station_code|escapejs }}",
             address: "{{ station.address|escapejs }}",
+            tariff: "{{ station.price_per_kWh }}",
             status: "{{ station.status|escapejs }}",
             chargers: {{ station.number_of_chargers }},
             lat: {{ station.latitude }},
@@ -73,34 +115,72 @@
         {% endfor %}
     ];
 
+    var markersMap = {};
+    var markerLayerList = [];
+
+    // Custom EV Bolt Pin Icon
+    var evIcon = L.divIcon({
+        className: 'custom-ev-pin-wrapper',
+        html: '<div class="custom-ev-pin"><i class="bi bi-lightning-charge-fill"></i></div>',
+        iconSize: [36, 36],
+        iconAnchor: [18, 36],
+        popupAnchor: [0, -36]
+    });
+
     stations.forEach(function(s) {
-        var marker = L.marker([s.lat, s.lng]).addTo(map);
+        var marker = L.marker([s.lat, s.lng], { icon: evIcon }).addTo(map);
         var popupContent =
-            "<div style='min-width: 160px;'>" +
-            "<strong>" + s.name + "</strong> (" + s.code + ")<br>" +
-            "<small class='text-muted'>" + s.address + "</small><br>" +
-            "<strong>Chargers:</strong> " + s.chargers + "<br>" +
-            "<strong>Status:</strong> <span class='badge bg-success'>" + s.status + "</span>" +
+            "<div class='ev-popup-box'>" +
+            "<div class='d-flex justify-content-between align-items-center mb-1'>" +
+            "<span class='badge bg-primary-subtle text-primary border'>" + s.code + "</span>" +
+            "<span class='badge bg-success'>" + s.status + "</span>" +
+            "</div>" +
+            "<h6 class='fw-bold mb-1'>" + s.name + "</h6>" +
+            "<p class='text-muted small mb-2' style='line-height: 1.2;'>" + s.address + "</p>" +
+            "<div class='d-flex justify-content-between small text-muted border-top border-bottom py-1 mb-2'>" +
+            "<span><strong>" + s.chargers + "</strong> Chargers</span>" +
+            "<span>Rate: <strong class='text-success'>Rs. " + s.tariff + "</strong>/kWh</span>" +
+            "</div>" +
+            "<a href='/stations/" + s.id + "/' class='btn btn-sm btn-primary w-100 py-1 fw-bold'>" +
+            "<i class='bi bi-calendar2-check me-1'></i>View Slots & Book" +
+            "</a>" +
             "</div>";
         marker.bindPopup(popupContent);
+        markersMap[s.id] = marker;
+        markerLayerList.push(marker);
     });
 
     var group = null;
-    if (stations.length > 0) {
-        group = new L.featureGroup(stations.map(function(s) {
-            return L.marker([s.lat, s.lng]);
-        }));
+    if (markerLayerList.length > 0) {
+        group = new L.featureGroup(markerLayerList);
         map.fitBounds(group.getBounds().pad(0.2), { maxZoom: 15 });
     }
 
     var resetBtn = document.getElementById('resetMapBtn');
     if (resetBtn) {
         resetBtn.addEventListener('click', function() {
-            if (group && stations.length > 0) {
+            if (group && markerLayerList.length > 0) {
                 map.fitBounds(group.getBounds().pad(0.2), { maxZoom: 15 });
             } else {
                 map.setView([20.5937, 78.9629], 5);
             }
+        });
+    }
+
+    // Live search filter
+    var searchInput = document.getElementById('mapSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            var q = e.target.value.toLowerCase().trim();
+            stations.forEach(function(s) {
+                var match = s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q) || s.address.toLowerCase().includes(q);
+                var marker = markersMap[s.id];
+                if (match) {
+                    if (!map.hasLayer(marker)) map.addLayer(marker);
+                } else {
+                    if (map.hasLayer(marker)) map.removeLayer(marker);
+                }
+            });
         });
     }
 </script>

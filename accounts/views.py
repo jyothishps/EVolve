@@ -51,7 +51,26 @@ def logout_view(request):
 def driver_dashboard(request):
     if request.user.is_admin():
         return redirect('accounts:admin_dashboard')
-    return render(request, 'accounts/dashboard.html')
+    
+    from bookings.models import Booking
+    from bookings.utils import expire_overdue_bookings
+    
+    expire_overdue_bookings()
+    user_bookings = Booking.objects.filter(user=request.user).select_related('station', 'charger', 'slot')
+    recent_bookings = user_bookings.order_by('-created_at')[:5]
+    total_bookings = user_bookings.count()
+    active_bookings = user_bookings.filter(status__in=['Pending', 'Confirmed']).count()
+    completed_bookings = user_bookings.filter(status='Completed').count()
+    next_booking = user_bookings.filter(status='Confirmed').order_by('booking_date', 'booking_time').first()
+
+    return render(request, 'accounts/dashboard.html', {
+        'recent_bookings': recent_bookings,
+        'total_bookings': total_bookings,
+        'active_bookings': active_bookings,
+        'completed_bookings': completed_bookings,
+        'next_booking': next_booking,
+    })
+
 
 
 @login_required

@@ -1,39 +1,263 @@
 {% extends 'base.html' %}
-{% block title %}Driver Dashboard{% endblock %}
+{% block title %}Driver Dashboard - EVolve EV Network{% endblock %}
+
+{% block extra_css %}
+<style>
+    .driver-welcome-card {
+        background: radial-gradient(circle at 85% 15%, rgba(6, 182, 212, 0.2) 0%, rgba(15, 23, 42, 0) 50%),
+                    linear-gradient(135deg, #090e17 0%, #111a2d 100%);
+        border-radius: var(--radius-xl);
+        color: #fff;
+        padding: 36px 32px;
+        margin-bottom: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25);
+    }
+    .stat-metric-card {
+        background: #fff;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        padding: 22px 24px;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+        box-shadow: var(--shadow-subtle);
+    }
+    .stat-metric-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-card);
+        border-color: var(--brand-primary);
+    }
+    .spotlight-booking-card {
+        background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+        border: 2px solid #10b981 !important;
+        border-radius: var(--radius-lg);
+        box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.2);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-    <h2>Driver Dashboard</h2>
-    <p class="text-muted">Welcome, <strong>{{ request.user.username }}</strong> ({{ request.user.role }})</p>
+<!-- Welcome Banner -->
+<div class="driver-welcome-card">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1">
+                    <i class="bi bi-shield-check me-1"></i>Verified Driver
+                </span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1">
+                    <span class="beacon-dot beacon-success me-1"></span>Account Active
+                </span>
+            </div>
+            <h2 class="display-6 fw-bold mb-2 text-white">Driver Dashboard</h2>
+            <p class="text-light opacity-75 mb-0" style="max-width: 600px; line-height: 1.5;">
+                Welcome back, <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>! Manage your active reservations, digital charging tickets, and tax invoices.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'stations:driver_station_map' %}" class="btn btn-primary px-4 py-2 shadow">
+                <i class="bi bi-geo-alt-fill me-1"></i>Find Stations
+            </a>
+            <a href="{% url 'bookings:booking_list' %}" class="btn btn-outline-light px-4 py-2">
+                <i class="bi bi-ticket-perforated me-1"></i>All Bookings
+            </a>
+        </div>
+    </div>
 </div>
 
-<div class="row g-3">
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow-sm h-100 bg-white">
-            <div class="card-body">
-                <h5 class="card-title fw-bold">
-                    <i class="bi bi-geo-alt text-success me-2"></i>Station Map
-                </h5>
-                <p class="card-text text-muted">Explore active EV charging stations on the interactive map.</p>
-                <a href="{% url 'stations:driver_station_map' %}" class="btn btn-primary">Open Station Map</a>
+<!-- Upcoming Booking Spotlight Banner -->
+{% if next_booking %}
+<div class="card spotlight-booking-card p-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success px-3 py-1">
+                    <i class="bi bi-clock-history me-1"></i>Upcoming Reservation
+                </span>
+                <span class="badge bg-white text-dark border font-monospace px-3 py-1">
+                    #{{ next_booking.id }}
+                </span>
+            </div>
+            <h3 class="fw-bold mb-1 text-dark">
+                {{ next_booking.station.name }} ({{ next_booking.station.station_code }})
+            </h3>
+            <p class="text-muted mb-0">
+                <i class="bi bi-calendar-event me-1"></i><strong>{{ next_booking.booking_date }}</strong> &bull;
+                <i class="bi bi-clock me-1"></i><strong>{{ next_booking.booking_time|time:"H:i" }}</strong> &bull;
+                Charger #{{ next_booking.charger.id }} ({{ next_booking.charger.charging_power_kW }} kW Fast)
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'bookings:booking_detail' next_booking.id %}" class="btn btn-success px-4 py-2 shadow-sm">
+                <i class="bi bi-qr-code me-1"></i>View Ticket & QR
+            </a>
+            <a href="{% url 'bookings:booking_invoice' next_booking.id %}" class="btn btn-outline-dark px-4 py-2">
+                <i class="bi bi-receipt me-1"></i>Booking Bill
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Key Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-metric-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Total Bookings</small>
+                    <h2 class="fw-bold mb-0 text-dark font-monospace">{{ total_bookings }}</h2>
+                </div>
+                <div class="bg-primary-subtle text-primary p-3 rounded-3 fs-3">
+                    <i class="bi bi-calendar2-check"></i>
+                </div>
             </div>
         </div>
     </div>
-
-    <div class="col-md-4">
-        <a href="{% url 'stations:driver_station_list' %}" class="text-decoration-none">
-            <div class="card shadow-sm">
-                <div class="card-body text-center"><h5>Browse Stations</h5></div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-metric-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Active Slots</small>
+                    <h2 class="fw-bold mb-0 text-success font-monospace">{{ active_bookings }}</h2>
+                </div>
+                <div class="bg-success-subtle text-success p-3 rounded-3 fs-3">
+                    <i class="bi bi-lightning-charge"></i>
+                </div>
             </div>
-        </a>
+        </div>
     </div>
-
-    <div class="col-md-4">
-        <a href="{% url 'bookings:booking_list' %}" class="text-decoration-none">
-            <div class="card shadow-sm">
-                <div class="card-body text-center"><h5>My Bookings</h5></div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-metric-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Completed Sessions</small>
+                    <h2 class="fw-bold mb-0 text-info font-monospace">{{ completed_bookings }}</h2>
+                </div>
+                <div class="bg-info-subtle text-info p-3 rounded-3 fs-3">
+                    <i class="bi bi-check-circle"></i>
+                </div>
             </div>
-        </a>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-metric-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Reservation Deposit</small>
+                    <h2 class="fw-bold mb-0 text-primary font-monospace">Rs. 50</h2>
+                </div>
+                <div class="bg-warning-subtle text-warning p-3 rounded-3 fs-3">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<!-- Quick Action Navigation Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100 card-interactive p-4 border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="text-primary fs-1 mb-3">
+                    <i class="bi bi-map-fill"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Live Station Map</h5>
+                <p class="text-muted small mb-4" style="line-height: 1.6;">
+                    Explore active charging hubs on Leaflet map with live search and charger status filters.
+                </p>
+                <a href="{% url 'stations:driver_station_map' %}" class="btn btn-outline-primary btn-sm w-100 py-2">
+                    Open Station Map &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 card-interactive p-4 border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="text-success fs-1 mb-3">
+                    <i class="bi bi-ev-station-fill"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Browse Stations</h5>
+                <p class="text-muted small mb-4" style="line-height: 1.6;">
+                    Search charging hubs, filter connector types (CCS2, Type 2), and inspect tariffs.
+                </p>
+                <a href="{% url 'stations:driver_station_list' %}" class="btn btn-outline-success btn-sm w-100 py-2">
+                    Browse All Stations &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 card-interactive p-4 border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="text-warning fs-1 mb-3">
+                    <i class="bi bi-ticket-perforated-fill"></i>
+                </div>
+                <h5 class="fw-bold mb-2">My Bookings</h5>
+                <p class="text-muted small mb-4" style="line-height: 1.6;">
+                    View your booked slots, arrival check-in tickets, and downloadable tax invoices.
+                </p>
+                <a href="{% url 'bookings:booking_list' %}" class="btn btn-outline-dark btn-sm w-100 py-2">
+                    Manage My Bookings &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Bookings Table -->
+{% if recent_bookings %}
+<div class="card shadow-sm border-0 mb-4 overflow-hidden">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i>Recent Bookings & Tax Invoices</h5>
+        <a href="{% url 'bookings:booking_list' %}" class="btn btn-sm btn-outline-secondary">View All</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 bg-white">
+                <thead class="table-light">
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Station</th>
+                        <th>Date & Time</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in recent_bookings %}
+                    <tr>
+                        <td><strong class="font-monospace">#{{ b.id }}</strong></td>
+                        <td>{{ b.station.name }} ({{ b.station.station_code }})</td>
+                        <td>{{ b.booking_date }} at {{ b.booking_time|time:"H:i" }}</td>
+                        <td>
+                            <span class="badge bg-{% if b.payment_status == 'Paid' %}success{% elif b.payment_status == 'Refunded' %}warning text-dark{% else %}secondary{% endif %}-subtle text-{% if b.payment_status == 'Paid' %}success{% elif b.payment_status == 'Refunded' %}dark{% else %}secondary{% endif %} border">
+                                Rs. {{ b.booking_fee|floatformat:0 }} - {{ b.payment_status }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if b.status == 'Confirmed' %}success{% elif b.status == 'Pending' %}warning text-dark{% elif b.status == 'Completed' %}info{% else %}secondary{% endif %}">
+                                {{ b.status }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'bookings:booking_detail' b.id %}" class="btn btn-sm btn-outline-primary" title="View Ticket">
+                                Ticket
+                            </a>
+                            {% if b.payment_status == 'Paid' %}
+                            <a href="{% url 'bookings:booking_invoice' b.id %}" class="btn btn-sm btn-outline-secondary" title="View Invoice">
+                                <i class="bi bi-receipt"></i> Bill
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

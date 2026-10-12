@@ -1,76 +1,236 @@
 {% extends 'base.html' %}
-{% block title %}Home - EV Charging Slot Booking System{% endblock %}
+{% block title %}EVolve - Smart EV Charging Slot Booking System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-banner {
+        background: radial-gradient(circle at 85% 15%, rgba(6, 182, 212, 0.25) 0%, rgba(15, 23, 42, 0) 50%),
+                    radial-gradient(circle at 15% 85%, rgba(16, 185, 129, 0.2) 0%, rgba(15, 23, 42, 0) 45%),
+                    linear-gradient(135deg, #070c16 0%, #111a2d 100%);
+        border-radius: var(--radius-xl);
+        padding: 70px 48px;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.35);
+    }
+    .hero-glow-badge {
+        background: rgba(56, 189, 248, 0.12);
+        color: #38bdf8;
+        border: 1px solid rgba(56, 189, 248, 0.28);
+        padding: 6px 18px;
+        border-radius: var(--radius-pill);
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+    }
+    .hero-stat-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--radius-md);
+        padding: 18px 20px;
+        text-align: center;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .hero-stat-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(56, 189, 248, 0.4);
+    }
+    .step-number-badge {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.35rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .feature-icon-wrapper {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        margin-bottom: 1.25rem;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<div class="p-5 mb-4 bg-white rounded-3 shadow-sm border text-center">
-    <h1 class="display-6 fw-bold mb-3">EV Charging Slot Booking System</h1>
-    <p class="col-md-8 mx-auto fs-5 text-muted mb-4">
-        Locate nearby charging stations and view real-time station availability across the region.
-    </p>
-    <div class="d-flex justify-content-center gap-2 flex-wrap">
-        <a href="{% url 'stations:driver_station_map' %}" class="btn btn-primary btn-lg px-4">
-            <i class="bi bi-geo-alt me-1"></i> View Station Map
-        </a>
-        {% if user.is_authenticated %}
-            {% if user.is_admin %}
-            <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-outline-dark btn-lg px-4">
-                Admin Dashboard
-            </a>
-            {% else %}
-            <a href="{% url 'accounts:driver_dashboard' %}" class="btn btn-outline-dark btn-lg px-4">
-                My Dashboard
-            </a>
-            {% endif %}
-        {% else %}
-            <a href="{% url 'accounts:register' %}" class="btn btn-success btn-lg px-4">
-                Register
-            </a>
-            <a href="{% url 'accounts:login' %}" class="btn btn-outline-secondary btn-lg px-4">
-                Sign In
-            </a>
-        {% endif %}
+<!-- Modern Hero Section -->
+<div class="hero-banner mb-5 text-center text-lg-start">
+    <div class="row align-items-center g-5">
+        <div class="col-lg-8">
+            <div class="mb-3">
+                <span class="hero-glow-badge">
+                    <span class="beacon-dot beacon-success"></span> Intelligent EV Grid Mobility
+                </span>
+            </div>
+            <h1 class="display-4 fw-bold mb-3 text-white" style="letter-spacing: -0.03em; line-height: 1.15;">
+                EV Charging Slot Booking System
+            </h1>
+            <p class="fs-5 text-slate-300 text-light opacity-80 mb-4 col-lg-10" style="line-height: 1.6;">
+                Eliminate charging queue anxiety. Locate ultra-fast DC hubs, predict station congestion using machine learning, and secure your exclusive slot with advance reservation billing.
+            </p>
+            <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
+                <a href="{% url 'stations:driver_station_map' %}" class="btn btn-primary btn-lg px-4 py-3 shadow-lg">
+                    <i class="bi bi-map-fill me-2"></i>View Station Map
+                </a>
+                <a href="{% url 'stations:driver_station_list' %}" class="btn btn-outline-light btn-lg px-4 py-3">
+                    <i class="bi bi-ev-station me-2"></i>Browse Stations
+                </a>
+                {% if user.is_authenticated %}
+                    {% if user.is_admin %}
+                    <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-warning btn-lg px-4 py-3 text-dark">
+                        <i class="bi bi-speedometer2 me-1"></i>Admin Dashboard
+                    </a>
+                    {% else %}
+                    <a href="{% url 'accounts:driver_dashboard' %}" class="btn btn-success btn-lg px-4 py-3">
+                        <i class="bi bi-speedometer2 me-1"></i>My Dashboard
+                    </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'accounts:register' %}" class="btn btn-success btn-lg px-4 py-3">
+                        <i class="bi bi-person-plus me-1"></i>Register
+                    </a>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-secondary btn-lg px-4 py-3 text-white border-secondary">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Sign In
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="hero-stat-card">
+                        <div class="fs-2 fw-bold text-info mb-1 font-monospace"><i class="bi bi-ev-station"></i> 100%</div>
+                        <small class="text-light opacity-75 d-block fw-medium">Active Fast Hubs</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="hero-stat-card">
+                        <div class="fs-2 fw-bold text-success mb-1 font-monospace"><i class="bi bi-lightning-charge"></i> 50+ kW</div>
+                        <small class="text-light opacity-75 d-block fw-medium">DC Fast Charging</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="hero-stat-card">
+                        <div class="fs-2 fw-bold text-warning mb-1 font-monospace"><i class="bi bi-cpu"></i> AI ML</div>
+                        <small class="text-light opacity-75 d-block fw-medium">Load Forecasting</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="hero-stat-card">
+                        <div class="fs-2 fw-bold text-primary mb-1 font-monospace"><i class="bi bi-shield-check"></i> 0 Wait</div>
+                        <small class="text-light opacity-75 d-block fw-medium">Guaranteed Slot</small>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Features Section -->
-<div class="row g-4 mt-2 mb-4">
-    <div class="col-md-4">
-        <div class="card h-100 shadow-sm bg-white">
-            <div class="card-body text-center p-4">
-                <div class="fs-1 text-primary mb-3">
-                    <i class="bi bi-map"></i>
+<!-- 3-Step Interactive Booking Journey -->
+<div class="mb-5">
+    <div class="text-center mb-5">
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle mb-2 px-3 py-1">Effortless Workflow</span>
+        <h2 class="fw-bold mb-2">How EVolve Works</h2>
+        <p class="text-muted">Smart EV charging in three seamless steps</p>
+    </div>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 card-interactive p-4 border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="step-number-badge bg-primary-subtle text-primary">1</div>
+                    <h5 class="fw-bold mb-2">Locate & AI Forecast</h5>
+                    <p class="text-muted small mb-0" style="line-height: 1.6;">
+                        Explore hubs on Leaflet interactive maps. View AI-predicted station loads (Low, Normal, Peak) to select the fastest charging times.
+                    </p>
                 </div>
-                <h5 class="card-title fw-bold">Interactive Map</h5>
-                <p class="card-text text-muted">
-                    Locate active EV charging hubs on Leaflet and OpenStreetMap.
-                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 card-interactive p-4 border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="step-number-badge bg-success-subtle text-success">2</div>
+                    <h5 class="fw-bold mb-2">Reserve & Pay Advance</h5>
+                    <p class="text-muted small mb-0" style="line-height: 1.6;">
+                        Lock in your exclusive charging slot. Pay the ₹50 reservation fee via simulated UPI or Card checkout with instant tax invoices.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 card-interactive p-4 border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="step-number-badge bg-warning-subtle text-warning">3</div>
+                    <h5 class="fw-bold mb-2">Check In & Plug In</h5>
+                    <p class="text-muted small mb-0" style="line-height: 1.6;">
+                        Show your digital QR ticket at the station. Start charging right away with zero waiting line and instant slot clearance.
+                    </p>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card h-100 shadow-sm bg-white">
-            <div class="card-body text-center p-4">
-                <div class="fs-1 text-success mb-3">
-                    <i class="bi bi-ev-station"></i>
+</div>
+
+<!-- Core Platform Features -->
+<div class="mb-5">
+    <div class="text-center mb-5">
+        <span class="badge bg-success-subtle text-success border border-success-subtle mb-2 px-3 py-1">Platform Architecture</span>
+        <h2 class="fw-bold mb-2">Designed for Maximum Efficiency</h2>
+        <p class="text-muted">Everything drivers and station operators need in one unified experience</p>
+    </div>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 card-interactive bg-white border-0 shadow-sm p-4 text-center">
+                <div class="card-body p-0">
+                    <div class="feature-icon-wrapper bg-primary-subtle text-primary mx-auto">
+                        <i class="bi bi-map-fill"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-2">Interactive Map</h5>
+                    <p class="card-text text-muted small" style="line-height: 1.6;">
+                        Locate active EV charging hubs on Leaflet and OpenStreetMap with live charger status and live search filtering.
+                    </p>
                 </div>
-                <h5 class="card-title fw-bold">Station Information</h5>
-                <p class="card-text text-muted">
-                    Inspect station coordinates, addresses, and available charging points.
-                </p>
             </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100 shadow-sm bg-white">
-            <div class="card-body text-center p-4">
-                <div class="fs-1 text-warning mb-3">
-                    <i class="bi bi-shield-lock"></i>
+        <div class="col-md-4">
+            <div class="card h-100 card-interactive bg-white border-0 shadow-sm p-4 text-center">
+                <div class="card-body p-0">
+                    <div class="feature-icon-wrapper bg-success-subtle text-success mx-auto">
+                        <i class="bi bi-ev-station-fill"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-2">Station Information</h5>
+                    <p class="card-text text-muted small" style="line-height: 1.6;">
+                        Inspect station coordinates, addresses, connector types (CCS2, Type 2), tariffs, and real-time charger availability.
+                    </p>
                 </div>
-                <h5 class="card-title fw-bold">Role-Based Access</h5>
-                <p class="card-text text-muted">
-                    Separate dashboards for administrators to manage stations and drivers to browse them.
-                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 card-interactive bg-white border-0 shadow-sm p-4 text-center">
+                <div class="card-body p-0">
+                    <div class="feature-icon-wrapper bg-warning-subtle text-warning mx-auto">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-2">Role-Based Access</h5>
+                    <p class="card-text text-muted small" style="line-height: 1.6;">
+                        Separate dashboards for administrators to manage stations and drivers to browse them with full billing integrity.
+                    </p>
+                </div>
             </div>
         </div>
     </div>

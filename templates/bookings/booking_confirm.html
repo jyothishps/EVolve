@@ -4,56 +4,62 @@
 {% block extra_css %}
 <style>
     .payment-tab-btn {
-        border-radius: 8px;
-        padding: 10px 16px;
+        border-radius: var(--radius-sm);
+        padding: 12px 18px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s ease;
-        border: 2px solid #dee2e6;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        border: 2px solid var(--border-subtle);
         background: #fff;
     }
     .payment-tab-btn.active {
-        border-color: #0d6efd;
-        background: #f0f7ff;
-        color: #0d6efd;
+        border-color: var(--brand-primary);
+        background: #f0f9ff;
+        color: var(--brand-primary);
+        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.15);
     }
     .upi-app-badge {
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 10px;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        padding: 12px 8px;
         text-align: center;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         background: #fafafa;
     }
     .upi-app-badge:hover, .upi-app-badge.selected {
-        border-color: #0d6efd;
-        background: #eef6ff;
-        box-shadow: 0 2px 6px rgba(13, 110, 253, 0.15);
+        border-color: var(--brand-primary);
+        background: #f0f9ff;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
+        transform: translateY(-2px);
     }
     .simulated-card-box {
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        background: radial-gradient(circle at 80% 20%, rgba(6, 182, 212, 0.15) 0%, rgba(11, 17, 30, 0) 60%),
+                    linear-gradient(135deg, #0b111e 0%, #1e293b 100%);
         color: #fff;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        border-radius: var(--radius-md);
+        padding: 22px;
+        box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.15);
         max-width: 360px;
         margin: 0 auto 20px auto;
         position: relative;
     }
     .simulated-card-chip {
-        width: 40px;
-        height: 28px;
-        background: linear-gradient(135deg, #fce38a 0%, #f38181 100%);
-        border-radius: 4px;
+        width: 42px;
+        height: 30px;
+        background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%);
+        border-radius: 6px;
         margin-bottom: 15px;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
     }
     .qr-container {
         background: #fff;
-        padding: 15px;
+        padding: 16px;
         display: inline-block;
-        border: 2px dashed #0d6efd;
-        border-radius: 12px;
+        border: 2px dashed var(--brand-primary);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-card);
     }
 </style>
 {% endblock %}
