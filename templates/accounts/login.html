@@ -1,39 +1,181 @@
 {% extends 'base.html' %}
-{% block title %}Login - EV Charging Slot Booking System{% endblock %}
+{% load static %}
+
+{% block title %}Sign In - EVolve EV Charging Cockpit{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-sm bg-white">
-            <div class="card-header bg-primary text-white text-center py-3">
-                <h4 class="mb-0">Sign In</h4>
-            </div>
-            <div class="card-body p-4">
-                {% if form.errors %}
-                    <div class="alert alert-danger">
-                        Invalid username or password. Please try again.
-                    </div>
-                {% endif %}
+<div class="auth-wrapper">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-xl-11">
+                <div class="auth-card-container">
+                    <div class="row g-0">
+                        <!-- Left Panel: Electric Mobility Network Showcase -->
+                        <div class="col-lg-5 auth-showcase-panel">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <span class="auth-brand-badge">
+                                        <i class="bi bi-lightning-charge-fill text-warning"></i> Supercharger Access
+                                    </span>
+                                    <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-25 px-2 py-1 small">
+                                        <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Network Live
+                                    </span>
+                                </div>
+                                
+                                <h2 class="display-6 fw-bold text-white mb-3" style="letter-spacing: -0.03em;">
+                                    Power your journey in seconds.
+                                </h2>
+                                
+                                <p class="text-slate-300 small mb-4" style="line-height: 1.6;">
+                                    Sign in to your driver cockpit to reserve charging slots, monitor live station telemetry, and download tax invoices with advance reservation protection.
+                                </p>
 
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label">Username</label>
-                        {{ form.username }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        {{ form.password }}
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 mt-2">Login</button>
-                </form>
+                                <div class="d-flex flex-column gap-3 mb-4">
+                                    <div class="auth-perk-card d-flex align-items-center gap-3">
+                                        <div class="rounded-3 p-2 bg-info bg-opacity-10 text-info border border-info border-opacity-20">
+                                            <i class="bi bi-clock-history fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-white fw-semibold small">Zero Queue Guarantee</div>
+                                            <div class="text-muted" style="font-size: 0.78rem;">Reserved slots are locked for your arrival window</div>
+                                        </div>
+                                    </div>
 
-                <div class="mt-3 text-center">
-                    <span class="text-muted small">Don't have an account?</span>
-                    <a href="{% url 'accounts:register' %}" class="small">Register here</a>
+                                    <div class="auth-perk-card d-flex align-items-center gap-3">
+                                        <div class="rounded-3 p-2 bg-success bg-opacity-10 text-success border border-success border-opacity-20">
+                                            <i class="bi bi-qr-code fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-white fw-semibold small">Smart Digital Boarding Pass</div>
+                                            <div class="text-muted" style="font-size: 0.78rem;">Instant QR-ticket check-in directly at the charger bay</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="auth-perk-card d-flex align-items-center gap-3">
+                                        <div class="rounded-3 p-2 bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20">
+                                            <i class="bi bi-shield-check fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-white fw-semibold small">Advance Reservation Billing</div>
+                                            <div class="text-muted" style="font-size: 0.78rem;">Transparent ₹50 slot fee with instant GST tax invoices</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-top border-white border-opacity-10 d-flex align-items-center justify-content-between text-muted small">
+                                <span><i class="bi bi-shield-lock text-cyan me-1"></i> End-to-end Encrypted</span>
+                                <span>v2.4 EV Core</span>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Sign-In Form -->
+                        <div class="col-lg-7 auth-form-panel d-flex flex-column justify-content-center">
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="rounded-circle p-2 bg-cyan bg-opacity-10 text-cyan d-inline-flex">
+                                        <i class="bi bi-box-arrow-in-right fs-4"></i>
+                                    </span>
+                                    <div>
+                                        <h3 class="fw-bold text-white mb-0" style="letter-spacing: -0.02em;">Driver Sign In</h3>
+                                        <div class="text-muted small">Access your EV bookings, charging telemetry, and digital passes</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if form.errors %}
+                                <div class="alert alert-danger bg-danger bg-opacity-10 border-danger border-opacity-25 text-danger d-flex align-items-center gap-2 mb-4 p-3 rounded-3" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0"></i>
+                                    <div class="small">
+                                        Invalid username or password. Please verify your credentials and try again.
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <form method="post" id="loginForm">
+                                {% csrf_token %}
+                                
+                                <div class="mb-3">
+                                    <label class="form-label text-slate-300 small fw-semibold" for="{{ form.username.id_for_label }}">
+                                        Username
+                                    </label>
+                                    <div class="input-group auth-input-group">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-person text-slate-400"></i>
+                                        </span>
+                                        {{ form.username }}
+                                    </div>
+                                    {% if form.username.errors %}
+                                        <div class="text-danger small mt-1">{{ form.username.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label class="form-label text-slate-300 small fw-semibold mb-0" for="{{ form.password.id_for_label }}">
+                                            Password
+                                        </label>
+                                    </div>
+                                    <div class="input-group auth-input-group">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-key text-slate-400"></i>
+                                        </span>
+                                        {{ form.password }}
+                                        <button class="btn pwd-toggle-btn" type="button" id="togglePasswordBtn" title="Toggle password visibility">
+                                            <i class="bi bi-eye" id="togglePasswordIcon"></i>
+                                        </button>
+                                    </div>
+                                    {% if form.password.errors %}
+                                        <div class="text-danger small mt-1">{{ form.password.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <button type="submit" class="btn btn-primary auth-submit-btn w-100">
+                                    <i class="bi bi-lightning-charge-fill text-warning"></i> Sign In to Cockpit
+                                </button>
+                            </form>
+
+                            <div class="auth-divider">
+                                <span>New to EVolve?</span>
+                            </div>
+
+                            <div class="text-center">
+                                <p class="text-muted small mb-2">Ready to power your electric vehicle?</p>
+                                <a href="{% url 'accounts:register' %}" class="btn btn-outline-info w-100 py-2 d-inline-flex align-items-center justify-content-center gap-2">
+                                    <i class="bi bi-person-plus"></i> Create Free Driver Account
+                                </a>
+                            </div>
+
+                            <div class="mt-4 pt-3 border-top border-white border-opacity-10 text-center">
+                                <div class="text-muted" style="font-size: 0.78rem;">
+                                    <i class="bi bi-lock-fill text-success me-1"></i>
+                                    Protected by 256-bit TLS encryption & session-based CSRF guards
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggleBtn = document.getElementById('togglePasswordBtn');
+        const passInput = document.querySelector('input[name="password"]');
+        const icon = document.getElementById('togglePasswordIcon');
+
+        if (toggleBtn && passInput && icon) {
+            toggleBtn.addEventListener('click', function () {
+                const isPassword = passInput.getAttribute('type') === 'password';
+                passInput.setAttribute('type', isPassword ? 'text' : 'password');
+                icon.classList.toggle('bi-eye', !isPassword);
+                icon.classList.toggle('bi-eye-slash', isPassword);
+            });
+        }
+    });
+</script>
 {% endblock %}
