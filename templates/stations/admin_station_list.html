@@ -1,43 +1,90 @@
 {% extends 'base.html' %}
-{% block title %}Manage Stations{% endblock %}
+{% block title %}Manage Stations - Admin Cockpit{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Charging Stations</h2>
-    <a href="{% url 'stations:station_add' %}" class="btn btn-primary">+ Add Station</a>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge bg-warning bg-opacity-20 text-warning border border-warning border-opacity-30 px-3 py-1">
+                <i class="bi bi-shield-lock-fill me-1"></i> Admin Infrastructure
+            </span>
+            <span class="badge bg-white bg-opacity-10 text-slate-300">{{ stations|length }} Charging Hubs</span>
+        </div>
+        <h2 class="display-6 fw-bold text-white mb-0" style="letter-spacing: -0.02em;">Charging Stations</h2>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'stations:station_add' %}" class="btn btn-primary px-3 shadow">
+            <i class="bi bi-plus-lg me-1"></i> Add Station
+        </a>
+        <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-outline-light">
+            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+        </a>
+    </div>
 </div>
 
-<table class="table table-bordered table-hover bg-white">
-    <thead class="table-dark">
-        <tr>
-            <th>Code</th>
-            <th>Name</th>
-            <th>Address</th>
-            <th>Status</th>
-            <th>Chargers</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for station in stations %}
-        <tr>
-            <td>{{ station.station_code }}</td>
-            <td>{{ station.name }}</td>
-            <td>{{ station.address }}</td>
-            <td>
-                <span class="badge bg-{% if station.status == 'Active' %}success{% elif station.status == 'Maintenance' %}warning{% else %}secondary{% endif %}">
-                    {{ station.status }}
-                </span>
-            </td>
-            <td>{{ station.number_of_chargers }}</td>
-            <td>
-                <a href="{% url 'stations:station_edit' station.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
-                <a href="{% url 'stations:station_delete' station.id %}" class="btn btn-sm btn-outline-danger">Delete</a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="text-center text-muted">No stations yet.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="card shadow-sm mb-4 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Station Name</th>
+                    <th>Address</th>
+                    <th>Tariff</th>
+                    <th>Status</th>
+                    <th>Chargers</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for station in stations %}
+                <tr>
+                    <td>
+                        <a href="{% url 'stations:driver_station_detail' station.id %}" class="fw-bold text-cyan font-monospace text-decoration-none">
+                            {{ station.station_code }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-white fs-6">{{ station.name }}</div>
+                        {% if station.location_type %}
+                            <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ station.location_type }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="text-slate-300 small">{{ station.address }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-30 font-monospace">
+                            ₹{{ station.price_per_kWh }}/kWh
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-{% if station.status == 'Active' %}success{% elif station.status == 'Maintenance' %}warning text-dark{% else %}secondary{% endif %}-subtle text-{% if station.status == 'Active' %}success{% elif station.status == 'Maintenance' %}warning{% else %}secondary{% endif %} border px-3 py-1">
+                            {{ station.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-white bg-opacity-10 text-white font-monospace">
+                            {{ station.number_of_chargers }} Chargers
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'stations:driver_station_detail' station.id %}" class="btn btn-sm btn-outline-secondary py-1 px-2 me-1" title="View Station Hub">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{% url 'stations:station_edit' station.id %}" class="btn btn-sm btn-outline-info py-1 px-2 me-1" title="Edit Station">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'stations:station_delete' station.id %}" class="btn btn-sm btn-outline-danger py-1 px-2" title="Delete Station">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-5">No stations registered in the network yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

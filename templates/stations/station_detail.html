@@ -33,27 +33,59 @@
     </div>
 </div>
 
+{% if user.is_authenticated and user.is_admin %}
+<!-- Admin Management Toolbar (Only for Admin) -->
+<div class="card p-3 mb-4 bg-dark bg-opacity-75 border border-primary border-opacity-30">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-warning bg-opacity-20 text-warning px-3 py-2 border border-warning border-opacity-30">
+                <i class="bi bi-shield-lock-fill me-1"></i> Station Management Mode
+            </span>
+            <span class="text-slate-300 small">You are viewing hardware configuration & slot schedules. Driver vehicle booking tools are hidden.</span>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'stations:station_edit' station.id %}" class="btn btn-sm btn-outline-info">
+                <i class="bi bi-pencil-square me-1"></i>Edit Station Details
+            </a>
+            <a href="{% url 'stations:charger_add' %}" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-plus-circle me-1"></i>Add Charger
+            </a>
+            <a href="{% url 'stations:slot_add' %}" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-calendar-plus me-1"></i>Create Slots
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Chargers Section -->
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold"><i class="bi bi-plug-fill text-primary me-2"></i>Chargers & Connector Types</h5>
-        <span class="badge bg-light text-secondary border px-3 py-1">{{ chargers|length }} Available</span>
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-transparent py-3 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold text-white"><i class="bi bi-plug-fill text-primary me-2"></i>Chargers & Connector Types</h5>
+        <span class="badge bg-white bg-opacity-10 text-slate-300 border border-white border-opacity-10 px-3 py-1">{{ chargers|length }} Configured</span>
     </div>
     <div class="card-body p-4">
         <div class="row g-3">
             {% for charger in chargers %}
             <div class="col-md-6 col-lg-4">
-                <div class="charger-pill-card">
+                <div class="charger-pill-card d-flex justify-content-between align-items-center">
                     <div>
-                        <div class="fw-bold fs-6 mb-1">Charger #{{ charger.id }}</div>
+                        <div class="fw-bold fs-6 mb-1 text-white">Charger #{{ charger.id }}</div>
                         <div class="text-muted small">
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1">{{ charger.charging_power_kW }} kW</span>
                             <span>{{ charger.connector_type }}</span>
                         </div>
                     </div>
-                    <span class="badge bg-{% if charger.status == 'Available' %}success{% elif charger.status == 'Occupied' %}warning text-dark{% else %}secondary{% endif %}-subtle text-{% if charger.status == 'Available' %}success{% elif charger.status == 'Occupied' %}dark{% else %}secondary{% endif %} border px-3 py-1">
-                        {{ charger.status }}
-                    </span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-{% if charger.status == 'Available' %}success{% elif charger.status == 'Occupied' %}warning text-dark{% else %}secondary{% endif %}-subtle text-{% if charger.status == 'Available' %}success{% elif charger.status == 'Occupied' %}dark{% else %}secondary{% endif %} border px-3 py-1">
+                            {{ charger.status }}
+                        </span>
+                        {% if user.is_authenticated and user.is_admin %}
+                        <a href="{% url 'stations:charger_edit' charger.id %}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Edit Charger">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             {% empty %}
@@ -63,21 +95,22 @@
     </div>
 </div>
 
-<!-- Vehicle AI Profiler & SoC Calculator -->
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+{% if not user.is_authenticated or not user.is_admin %}
+<!-- Vehicle AI Profiler & SoC Calculator (Only for EV Drivers) -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-transparent py-3 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-2">
-            <h5 class="mb-0 fw-bold"><i class="bi bi-cpu-fill text-warning me-2"></i>AI Load & Battery Optimization</h5>
+            <h5 class="mb-0 fw-bold text-white"><i class="bi bi-cpu-fill text-warning me-2"></i>AI Load & Battery Optimization</h5>
         </div>
-        <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-3 py-1">
+        <span class="badge bg-warning bg-opacity-20 text-warning border border-warning border-opacity-30 px-3 py-1">
             <i class="bi bi-robot me-1"></i>Random Forest Predictor
         </span>
     </div>
     <div class="card-body p-4">
-        <form method="get" class="mb-0">
+        <form method="get" class="mb-2">
             <div class="row g-3 align-items-end">
                 <div class="col-md-3">
-                    <label class="form-label fw-semibold small mb-1">My vehicle</label>
+                    <label class="form-label text-slate-300 fw-semibold small mb-1">My vehicle</label>
                     <select name="vehicle_type" class="form-select">
                         {% for v in vehicle_types %}
                             <option value="{{ v }}" {% if vehicle.vehicle_type == v %}selected{% endif %}>{{ v }}</option>
@@ -85,12 +118,12 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label fw-semibold small mb-1">Battery (kWh)</label>
+                    <label class="form-label text-slate-300 fw-semibold small mb-1">Battery (kWh)</label>
                     <input type="number" name="battery_kwh" class="form-control"
                            min="{{ battery_min }}" max="{{ battery_max }}" step="1" value="{{ vehicle.battery_kwh|floatformat:0 }}">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label fw-semibold small mb-1">Current charge (%)</label>
+                    <label class="form-label text-slate-300 fw-semibold small mb-1">Current charge (%)</label>
                     <input type="number" name="initial_soc" class="form-control"
                            min="{{ soc_min }}" max="{{ soc_max }}" step="1" value="{{ vehicle.initial_soc|floatformat:0 }}">
                 </div>
@@ -105,7 +138,7 @@
                 <div class="battery-pill-body">
                     <div class="battery-pill-fill" style="width: {{ vehicle.initial_soc|default:50 }}%;"></div>
                 </div>
-                <span class="fw-bold font-monospace fs-6">{{ vehicle.initial_soc|floatformat:0 }}% SoC</span>
+                <span class="fw-bold font-monospace fs-6 text-white">{{ vehicle.initial_soc|floatformat:0 }}% SoC</span>
             </div>
             <small class="text-muted d-block mt-2">
                 <i class="bi bi-info-circle me-1"></i>Optional. Defaults are dataset averages. Random Forest predicts station grid congestion to suggest fastest charging times.
@@ -114,7 +147,7 @@
     </div>
 </div>
 
-<!-- AI Recommended Slot Highlight -->
+<!-- AI Recommended Slot Highlight (Only for Drivers) -->
 {% if best_slot %}
 <div class="card ai-recommendation-card p-4 mb-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
@@ -139,37 +172,42 @@
     </div>
 </div>
 {% endif %}
+{% endif %}
 
 <!-- Available Slots Table -->
-<div class="card shadow-sm border-0 mb-4 overflow-hidden">
-    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold"><i class="bi bi-calendar2-check text-primary me-2"></i>Available Slots</h5>
-        <span class="badge bg-light text-secondary border px-3 py-1">{{ available_slots|length }} Slots Found</span>
+<div class="card shadow-sm mb-4 overflow-hidden">
+    <div class="card-header bg-transparent py-3 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold text-white"><i class="bi bi-calendar2-check text-primary me-2"></i>Available Slots</h5>
+        <span class="badge bg-white bg-opacity-10 text-slate-300 border border-white border-opacity-10 px-3 py-1">{{ available_slots|length }} Slots Found</span>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 bg-white">
-                <thead class="table-light">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
                     <tr>
                         <th>Date</th>
                         <th>Time</th>
                         <th>Charger</th>
                         <th>Predicted Station Load</th>
                         <th>Advice</th>
-                        <th class="text-end">Action</th>
+                        {% if user.is_authenticated and user.is_admin %}
+                            <th class="text-end">Manage</th>
+                        {% else %}
+                            <th class="text-end">Action</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
                     {% for slot in available_slots %}
-                    <tr {% if slot.tag == 'Recommended' %}class="table-success"{% elif slot.tag == 'Avoid' %}class="table-danger"{% endif %}>
-                        <td class="fw-semibold">{{ slot.date }}</td>
+                    <tr>
+                        <td class="fw-semibold text-white">{{ slot.date }}</td>
                         <td>
-                            <span class="badge bg-light text-dark border font-monospace px-2 py-1">
+                            <span class="badge bg-dark border font-monospace px-2 py-1 text-light">
                                 {{ slot.start_time }} - {{ slot.end_time }}
                             </span>
                         </td>
                         <td>
-                            <strong>Charger #{{ slot.charger.id }}</strong>
+                            <strong class="text-white">Charger #{{ slot.charger.id }}</strong>
                             <small class="text-muted d-block">({{ slot.charger.charging_power_kW }} kW)</small>
                         </td>
                         <td>
@@ -177,7 +215,7 @@
                                 <span class="badge bg-{% if slot.prediction.level == 'Low' %}success{% elif slot.prediction.level == 'Normal' %}warning text-dark{% else %}danger{% endif %} me-1">
                                     {{ slot.prediction.level }}
                                 </span>
-                                <span class="small font-monospace fw-bold">{{ slot.prediction.load_kw }} kW</span>
+                                <span class="small font-monospace fw-bold text-slate-300">{{ slot.prediction.load_kw }} kW</span>
                             {% else %}
                                 <small class="text-muted">{{ slot.prediction.message }}</small>
                             {% endif %}
@@ -192,9 +230,18 @@
                             {% endif %}
                         </td>
                         <td class="text-end">
-                            <a href="{% url 'bookings:booking_create' slot.id %}" class="btn btn-sm btn-primary px-3 shadow-sm">
-                                Book
-                            </a>
+                            {% if user.is_authenticated and user.is_admin %}
+                                <a href="{% url 'stations:slot_edit' slot.id %}" class="btn btn-sm btn-outline-info py-1 px-2" title="Edit Slot">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'stations:slot_delete' slot.id %}" class="btn btn-sm btn-outline-danger py-1 px-2" title="Delete Slot">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            {% else %}
+                                <a href="{% url 'bookings:booking_create' slot.id %}" class="btn btn-sm btn-primary px-3 shadow-sm">
+                                    Book
+                                </a>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}
@@ -204,7 +251,7 @@
             </table>
         </div>
     </div>
-    <div class="card-footer bg-light border-0 py-3">
+    <div class="card-footer bg-transparent border-top border-white border-opacity-10 py-3">
         <small class="text-muted d-block">
             <i class="bi bi-info-circle me-1"></i>Predicted load is a machine-learning estimate (Random Forest) of how busy the station will be. Slots are ranked Low, then Normal, then Peak.
         </small>
@@ -212,11 +259,20 @@
 </div>
 
 <div class="d-flex justify-content-between mb-4">
-    <a href="{% url 'stations:driver_station_list' %}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i>Back to Stations
-    </a>
-    <a href="{% url 'stations:driver_station_map' %}" class="btn btn-outline-primary">
-        <i class="bi bi-map me-1"></i>View on Map
-    </a>
+    {% if user.is_authenticated and user.is_admin %}
+        <a href="{% url 'stations:station_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Manage Stations
+        </a>
+        <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-outline-primary">
+            <i class="bi bi-speedometer2 me-1"></i>Admin Dashboard
+        </a>
+    {% else %}
+        <a href="{% url 'stations:driver_station_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Stations
+        </a>
+        <a href="{% url 'stations:driver_station_map' %}" class="btn btn-outline-primary">
+            <i class="bi bi-map me-1"></i>View on Map
+        </a>
+    {% endif %}
 </div>
 {% endblock %}

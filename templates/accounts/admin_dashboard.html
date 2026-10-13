@@ -1,86 +1,613 @@
 {% extends 'base.html' %}
-{% block title %}Admin Dashboard{% endblock %}
+{% load static %}
+
+{% block title %}Admin Operations Cockpit - EVolve EV Network{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-hero-banner {
+        background: radial-gradient(circle at 85% 15%, rgba(6, 182, 212, 0.22) 0%, rgba(15, 23, 42, 0) 50%),
+                    radial-gradient(circle at 15% 85%, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0) 50%),
+                    linear-gradient(135deg, #090e17 0%, #0f182d 100%);
+        border-radius: var(--radius-xl);
+        color: #fff;
+        padding: 32px 30px;
+        margin-bottom: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.35);
+        position: relative;
+    }
+
+    .admin-stat-card {
+        background: #0c1322;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius-lg);
+        padding: 22px 20px;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .admin-stat-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(6, 182, 212, 0.4);
+        box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.5);
+    }
+
+    .admin-stat-card .stat-icon-badge {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+    }
+
+    .admin-action-card {
+        background: #0c1322;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .admin-action-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--brand-cyan);
+        box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(6, 182, 212, 0.15);
+    }
+
+    .queue-spotlight-card {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(12, 19, 34, 0.95) 100%);
+        border: 2px solid #10b981 !important;
+        border-radius: var(--radius-lg);
+        box-shadow: 0 10px 30px -5px rgba(16, 185, 129, 0.25);
+    }
+
+    .table-dark-custom {
+        --bs-table-bg: transparent;
+        --bs-table-color: var(--text-primary);
+        border-color: rgba(255, 255, 255, 0.07);
+    }
+
+    .table-dark-custom th {
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        background: rgba(255, 255, 255, 0.02);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 12px 16px;
+    }
+
+    .table-dark-custom td {
+        padding: 14px 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .table-dark-custom tr:hover td {
+        background: rgba(255, 255, 255, 0.03);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-    <h2>Admin Dashboard</h2>
-    <p class="text-muted">Logged in as <strong>{{ request.user.username }}</strong> ({{ request.user.role }})</p>
-</div>
+<div class="container-fluid px-lg-4 py-3">
 
-<div class="row g-3">
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow-sm h-100 bg-white">
-            <div class="card-body">
-                <h5 class="card-title fw-bold">
-                    <i class="bi bi-plus-circle text-primary me-2"></i>Add Station
-                </h5>
-                <p class="card-text text-muted">Register a new charging station location into the network.</p>
-                <a href="{% url 'stations:station_add' %}" class="btn btn-primary">Add Station</a>
+    <!-- Executive Admin Hero Banner -->
+    <div class="admin-hero-banner">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-4">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge bg-warning bg-opacity-20 text-warning border border-warning border-opacity-30 px-3 py-1 fw-semibold text-white">
+                        <i class="bi bi-shield-lock-fill me-1"></i> System Administrator
+                    </span>
+                    <!-- <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-30 px-3 py-1">
+                        <span class="beacon-dot beacon-success me-1"></span> Network Operations Online
+                    </span> -->
+                </div>
+                <h1 class="display-6 fw-bold mb-2 text-white" style="letter-spacing: -0.03em;">
+                    Admin Dashboard
+                </h1>
+                <p class="text-slate-300 small mb-0" style="max-width: 650px; line-height: 1.5;">
+                    Centralized fleet management, live charger telemetry, slot scheduling, and advance reservation tax billing for <strong>{{ request.user.username }}</strong>.
+                </p>
             </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow-sm h-100 bg-white">
-            <div class="card-body">
-                <h5 class="card-title fw-bold">
-                    <i class="bi bi-geo-alt text-success me-2"></i>Station Map
-                </h5>
-                <p class="card-text text-muted">View all active charging stations across the network.</p>
-                <a href="{% url 'stations:driver_station_map' %}" class="btn btn-outline-primary">Open Map</a>
+
+            <!-- Quick Action Hub -->
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'stations:station_add' %}" class="btn btn-primary px-3 py-2">
+                    <i class="bi bi-plus-circle-fill"></i> Add Station
+                </a>
+                <a href="{% url 'stations:charger_add' %}" class="btn btn-outline-info px-3 py-2">
+                    <i class="bi bi-lightning-charge-fill"></i> Add Charger
+                </a>
+                <a href="{% url 'stations:slot_add' %}" class="btn btn-outline-light px-3 py-2">
+                    <i class="bi bi-calendar-plus"></i> Create Slot
+                </a>
+                <a href="{% url 'stations:driver_station_map' %}" class="btn btn-outline-light px-3 py-2">
+                    <i class="bi bi-map"></i> View Map
+                </a>
             </div>
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow-sm h-100 bg-white">
-            <div class="card-body">
-                <h5 class="card-title fw-bold">
-                    <i class="bi bi-ev-station text-warning me-2"></i>Manage Stations
-                </h5>
-                <p class="card-text text-muted">View, edit, or delete existing charging stations.</p>
-                <a href="{% url 'stations:station_list' %}" class="btn btn-outline-primary">Manage Stations</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow-sm h-100 bg-white">
-            <div class="card-body">
-                <h5 class="card-title fw-bold">
-                    <i class="bi bi-lightning-charge text-danger me-2"></i>Manage Chargers
-                </h5>
-                <p class="card-text text-muted">Configure charger units, power ratings, and statuses.</p>
-                <a href="{% url 'stations:charger_list' %}" class="btn btn-outline-primary">Manage Chargers</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <a href="{% url 'stations:slot_list' %}" class="text-decoration-none">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5>Manage Slots</h5>
+    <!-- Checked-In Drivers High-Priority Queue Spotlight -->
+    {% if checked_in_count > 0 %}
+    <div class="queue-spotlight-card p-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <span class="rounded-circle p-2 bg-success text-white d-inline-flex animate-pulse">
+                    <i class="bi bi-person-check-fill fs-4"></i>
+                </span>
+                <div>
+                    <h5 class="fw-bold text-white mb-0">
+                        Checked-In Drivers Awaiting Session Start ({{ checked_in_count }})
+                    </h5>
+                    <div class="text-slate-300 small">
+                        Drivers have physically arrived at the charging bay. Engage charging cable and start session.
+                    </div>
                 </div>
             </div>
-        </a>
-    </div>
+            <a href="{% url 'bookings:admin_booking_list' %}" class="btn btn-sm btn-outline-light">
+                View All in Queue <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
 
-    <div class="col-md-4">
-        <a href="{% url 'sessions_app:session_list' %}" class="text-decoration-none">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5>Charging Sessions</h5>
+        <div class="row g-3">
+            {% for booking in checked_in_bookings %}
+            <div class="col-md-6 col-xl-4">
+                <div class="bg-dark bg-opacity-75 p-3 rounded-3 border border-success border-opacity-30 d-flex flex-column justify-content-between h-100">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-success text-white">#{{ booking.id }} • Checked In</span>
+                            <span class="text-muted small" style="font-size: 0.75rem;">
+                                {{ booking.checked_in_at|date:"h:i A" }}
+                            </span>
+                        </div>
+                        <div class="text-white fw-bold fs-6 mb-1">
+                            <i class="bi bi-person-fill text-cyan me-1"></i> {{ booking.user.username }}
+                        </div>
+                        <div class="text-muted small mb-1">
+                            <i class="bi bi-ev-station me-1"></i> {{ booking.station.station_code }} - {{ booking.station.name }}
+                        </div>
+                        <div class="text-slate-300 small mb-3">
+                            <span class="badge bg-secondary bg-opacity-50 me-1">{{ booking.charger.connector_type }}</span>
+                            {{ booking.booking_time|time:"g:i A" }} ({{ booking.booking_date|date:"d M" }})
+                        </div>
+                    </div>
+                    <a href="{% url 'sessions_app:session_start' booking.id %}" class="btn btn-sm btn-success w-100 fw-semibold">
+                        <i class="bi bi-play-circle-fill me-1"></i> Start Charging Session
+                    </a>
                 </div>
             </div>
-        </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Network KPI Tiles -->
+    <div class="row g-3 mb-4">
+        <!-- Stations -->
+        <div class="col-sm-6 col-xl-2">
+            <div class="admin-stat-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="stat-icon-badge bg-info bg-opacity-10 text-cyan border border-info border-opacity-20">
+                        <i class="bi bi-ev-station-fill"></i>
+                    </div>
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 small">
+                        {{ active_stations }} Active
+                    </span>
+                </div>
+                <div class="text-muted small fw-medium mb-1">Charging Hubs</div>
+                <div class="fs-3 fw-bold text-white mb-0">{{ total_stations }}</div>
+            </div>
+        </div>
+
+        <!-- Chargers -->
+        <div class="col-sm-6 col-xl-2">
+            <div class="admin-stat-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="stat-icon-badge bg-success bg-opacity-10 text-success border border-success border-opacity-20">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </div>
+                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-20 small">
+                        {{ available_chargers }} Ready
+                    </span>
+                </div>
+                <div class="text-muted small fw-medium mb-1">Charger Units</div>
+                <div class="fs-3 fw-bold text-white mb-0">{{ total_chargers }}</div>
+            </div>
+        </div>
+
+        <!-- Slots -->
+        <div class="col-sm-6 col-xl-2">
+            <div class="admin-stat-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="stat-icon-badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-20">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-20 small">
+                        {{ available_slots }} Open
+                    </span>
+                </div>
+                <div class="text-muted small fw-medium mb-1">Time Slots</div>
+                <div class="fs-3 fw-bold text-white mb-0">{{ total_slots }}</div>
+            </div>
+        </div>
+
+        <!-- Bookings -->
+        <div class="col-sm-6 col-xl-2">
+            <div class="admin-stat-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="stat-icon-badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20">
+                        <i class="bi bi-ticket-perforated-fill"></i>
+                    </div>
+                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 small">
+                        {{ confirmed_bookings }} Active
+                    </span>
+                </div>
+                <div class="text-muted small fw-medium mb-1">Total Bookings</div>
+                <div class="fs-3 fw-bold text-white mb-0">{{ total_bookings }}</div>
+            </div>
+        </div>
+
+        <!-- Energy Delivered -->
+        <!-- <div class="col-sm-6 col-xl-2">
+            <div class="admin-stat-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="stat-icon-badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20">
+                        <i class="bi bi-battery-charging"></i>
+                    </div>
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20 small">
+                        {{ total_sessions }} Sessions
+                    </span>
+                </div>
+                <div class="text-muted small fw-medium mb-1">Energy Delivered</div>
+                <div class="fs-3 fw-bold text-white mb-0">{{ total_energy }} <span class="fs-6 fw-normal text-muted">kWh</span></div>
+            </div>
+        </div> -->
+
+        <!-- Revenue -->
+        <!-- <div class="col-sm-6 col-xl-2">
+            <div class="admin-stat-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="stat-icon-badge bg-success bg-opacity-10 text-success border border-success border-opacity-20">
+                        <i class="bi bi-currency-rupee"></i>
+                    </div>
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 small">
+                        Paid Ledger
+                    </span>
+                </div>
+                <div class="text-muted small fw-medium mb-1">Total Revenue</div>
+                <div class="fs-3 fw-bold text-emerald mb-0">₹{{ total_revenue|floatformat:0 }}</div>
+            </div>
+        </div> -->
     </div>
 
-    <div class="col-md-4">
-        <a href="{% url 'bookings:admin_booking_list' %}" class="text-decoration-none">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5>Manage Bookings</h5>
+    <!-- Administrative Operations Command Matrix -->
+    <div class="mb-4">
+        <h4 class="fw-bold text-white mb-3" style="letter-spacing: -0.02em;">
+            <i class="bi bi-grid-1x2-fill text-cyan me-2"></i>Infrastructure & Management Hub
+        </h4>
+        
+        <div class="row g-3">
+            <!-- Station Management -->
+            <div class="col-md-6 col-xl-4">
+                <div class="admin-action-card">
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <span class="rounded-3 p-2 bg-info bg-opacity-10 text-info border border-info border-opacity-20">
+                                <i class="bi bi-ev-station fs-4"></i>
+                            </span>
+                            <span class="badge bg-white bg-opacity-10 text-slate-300">{{ total_stations }} Registered</span>
+                        </div>
+                        <h5 class="fw-bold text-white mb-2">Charging Stations</h5>
+                        <p class="text-muted small mb-3">
+                            Configure physical station hubs, geographic coordinates, location classifications, and per-kWh billing tariffs.
+                        </p>
+                    </div>
+                    <div class="d-flex gap-2 pt-2 border-top border-white border-opacity-10">
+                        <a href="{% url 'stations:station_list' %}" class="btn btn-outline-info flex-grow-1">
+                            <i class="bi bi-list-ul"></i> Manage Stations
+                        </a>
+                        <a href="{% url 'stations:station_add' %}" class="btn btn-info px-3" title="Add Station">
+                            <i class="bi bi-plus-lg"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-        </a>
+
+            <!-- Charger Infrastructure -->
+            <div class="col-md-6 col-xl-4">
+                <div class="admin-action-card">
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <span class="rounded-3 p-2 bg-success bg-opacity-10 text-success border border-success border-opacity-20">
+                                <i class="bi bi-lightning-charge fs-4"></i>
+                            </span>
+                            <span class="badge bg-white bg-opacity-10 text-slate-300">{{ total_chargers }} Hardware Units</span>
+                        </div>
+                        <h5 class="fw-bold text-white mb-2">Charger Units</h5>
+                        <p class="text-muted small mb-3">
+                            Monitor charger hardware ratings (kW), connector standards (CCS2, CHAdeMO, Type 2), and operational availability.
+                        </p>
+                    </div>
+                    <div class="d-flex gap-2 pt-2 border-top border-white border-opacity-10">
+                        <a href="{% url 'stations:charger_list' %}" class="btn btn-outline-success flex-grow-1">
+                            <i class="bi bi-sliders"></i> Manage Chargers
+                        </a>
+                        <a href="{% url 'stations:charger_add' %}" class="btn btn-success px-3" title="Add Charger">
+                            <i class="bi bi-plus-lg"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Slots -->
+            <div class="col-md-6 col-xl-4">
+                <div class="admin-action-card">
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <span class="rounded-3 p-2 bg-primary bg-opacity-10 text-primary border border-primary border-opacity-20">
+                                <i class="bi bi-calendar3 fs-4"></i>
+                            </span>
+                            <span class="badge bg-white bg-opacity-10 text-slate-300">{{ total_slots }} Total Slots</span>
+                        </div>
+                        <h5 class="fw-bold text-white mb-2">Slot Scheduling</h5>
+                        <p class="text-muted small mb-3">
+                            Generate and maintain charging time slots across station chargers to balance peak loads and driver demand.
+                        </p>
+                    </div>
+                    <div class="d-flex gap-2 pt-2 border-top border-white border-opacity-10">
+                        <a href="{% url 'stations:slot_list' %}" class="btn btn-outline-primary flex-grow-1">
+                            <i class="bi bi-calendar-check"></i> Manage Slots
+                        </a>
+                        <a href="{% url 'stations:slot_add' %}" class="btn btn-primary px-3" title="Create Slot">
+                            <i class="bi bi-plus-lg"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bookings & Advance Fees -->
+            <div class="col-md-6 col-xl-4">
+                <div class="admin-action-card">
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <span class="rounded-3 p-2 bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20">
+                                <i class="bi bi-ticket-detailed fs-4"></i>
+                            </span>
+                            <span class="badge bg-warning bg-opacity-20 text-warning">₹{{ reservation_revenue|floatformat:0 }} Collected</span>
+                        </div>
+                        <h5 class="fw-bold text-white mb-2">Driver Bookings</h5>
+                        <p class="text-muted small mb-3">
+                            Review driver reservations, track ₹50 advance payments, monitor check-in statuses, and filter by unique booking ID.
+                        </p>
+                    </div>
+                    <div class="pt-2 border-top border-white border-opacity-10">
+                        <a href="{% url 'bookings:admin_booking_list' %}" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-search me-1"></i> Reservations Ledger & Queue
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charging Sessions & Billing -->
+            <div class="col-md-6 col-xl-4">
+                <div class="admin-action-card">
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <span class="rounded-3 p-2 bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20">
+                                <i class="bi bi-cpu fs-4"></i>
+                            </span>
+                            <span class="badge bg-danger bg-opacity-20 text-danger">{{ total_sessions }} Completed</span>
+                        </div>
+                        <h5 class="fw-bold text-white mb-2">Sessions & Telemetry</h5>
+                        <p class="text-muted small mb-3">
+                            Track energy delivered (kWh), session durations, station load curves, and generate completed energy billing invoices.
+                        </p>
+                    </div>
+                    <div class="pt-2 border-top border-white border-opacity-10">
+                        <a href="{% url 'sessions_app:session_list' %}" class="btn btn-outline-danger w-100">
+                            <i class="bi bi-activity me-1"></i> Charging Telemetry & Bills
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Geospatial Map -->
+            <div class="col-md-6 col-xl-4">
+                <div class="admin-action-card">
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <span class="rounded-3 p-2 bg-light bg-opacity-10 text-white border border-white border-opacity-20">
+                                <i class="bi bi-map fs-4"></i>
+                            </span>
+                            <span class="badge bg-success bg-opacity-20 text-success">Live GPS</span>
+                        </div>
+                        <h5 class="fw-bold text-white mb-2">Network Geography</h5>
+                        <p class="text-muted small mb-3">
+                            Inspect interactive geospatial map view of all charging hubs, real-time bay availability, and city clustering.
+                        </p>
+                    </div>
+                    <div class="pt-2 border-top border-white border-opacity-10">
+                        <a href="{% url 'stations:driver_station_map' %}" class="btn btn-outline-light w-100">
+                            <i class="bi bi-globe-americas me-1"></i> Open Live Map
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Live Feeds: Recent Bookings & Recent Sessions -->
+    <div class="row g-4 mb-4">
+        <!-- Recent Bookings Table -->
+        <div class="col-xl-6">
+            <div class="card h-100">
+                <div class="card-header bg-transparent border-bottom border-white border-opacity-10 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-white mb-0">
+                        <i class="bi bi-clock-history text-warning me-2"></i>Recent Bookings
+                    </h5>
+                    <a href="{% url 'bookings:admin_booking_list' %}" class="btn btn-sm btn-outline-light">
+                        View All <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark-custom mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Booking ID</th>
+                                    <th>Driver</th>
+                                    <th>Station</th>
+                                    <th>Fee</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for b in recent_bookings %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'bookings:booking_detail' b.id %}" class="fw-bold text-cyan text-decoration-none">
+                                            #{{ b.id }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="text-white">{{ b.user.username }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="text-white small fw-medium">{{ b.station.station_code }}</div>
+                                        <div class="text-muted" style="font-size: 0.72rem;">{{ b.charger.connector_type }}</div>
+                                    </td>
+                                    <td>
+                                        {% if b.payment_status == 'Paid' %}
+                                            <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-30">
+                                                ₹{{ b.booking_fee|default:50 }} Paid
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary bg-opacity-20 text-muted">Unpaid</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if b.status == 'Confirmed' %}
+                                            <span class="badge bg-primary bg-opacity-20 text-primary border border-primary border-opacity-30">Confirmed</span>
+                                        {% elif b.status == 'Completed' %}
+                                            <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-30">Completed</span>
+                                        {% elif b.status == 'Cancelled' %}
+                                            <span class="badge bg-danger bg-opacity-20 text-danger border border-danger border-opacity-30">Cancelled</span>
+                                        {% else %}
+                                            <span class="badge bg-warning bg-opacity-20 text-warning">{{ b.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'bookings:booking_detail' b.id %}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="View Ticket">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if b.payment_status == 'Paid' %}
+                                        <a href="{% url 'bookings:booking_invoice' b.id %}" class="btn btn-sm btn-outline-info py-1 px-2" title="Tax Invoice">
+                                            <i class="bi bi-receipt"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        No driver bookings recorded yet.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Charging Sessions Table -->
+        <div class="col-xl-6">
+            <div class="card h-100">
+                <div class="card-header bg-transparent border-bottom border-white border-opacity-10 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-white mb-0">
+                        <i class="bi bi-activity text-danger me-2"></i>Recent Charging Telemetry
+                    </h5>
+                    <a href="{% url 'sessions_app:session_list' %}" class="btn btn-sm btn-outline-light">
+                        View All <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark-custom mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Session</th>
+                                    <th>Station</th>
+                                    <th>Energy</th>
+                                    <th>Duration</th>
+                                    <th>Bill</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in recent_sessions %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'sessions_app:session_detail' s.id %}" class="fw-bold text-danger text-decoration-none">
+                                            #{{ s.id }}
+                                        </a>
+                                        <span class="text-muted small"> (B#{{ s.booking.id }})</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-white small fw-medium">{{ s.station.station_code }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-white fw-bold">{{ s.energy_kWh }}</span> <span class="text-muted small">kWh</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-slate-300 small">{{ s.duration }} hrs</span>
+                                    </td>
+                                    <td>
+                                        {% if s.payment_status == 'Paid' %}
+                                            <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-30">
+                                                ₹{{ s.amount }} Paid
+                                            </span>
+                                        {% elif s.amount > 0 %}
+                                            <span class="badge bg-warning bg-opacity-20 text-warning">
+                                                ₹{{ s.amount }} Unpaid
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary bg-opacity-20 text-muted">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'sessions_app:session_detail' s.id %}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Session Telemetry">
+                                            <i class="bi bi-speedometer"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        No charging telemetry recorded yet.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

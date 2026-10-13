@@ -79,3 +79,22 @@ class AccountsAuthViewTests(TestCase):
         response = self.client.get(reverse('accounts:register'))
         self.assertRedirects(response, reverse('core:home'))
 
+    def test_admin_dashboard_renders_metrics_and_command_matrix(self):
+        self.client.login(username='admin_boss', password='AdminPassword123!')
+        response = self.client.get(reverse('accounts:admin_dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Admin Dashboard')
+        self.assertContains(response, 'Charging Hubs')
+        self.assertContains(response, 'Charger Units')
+        self.assertContains(response, 'Time Slots')
+        self.assertContains(response, 'Energy Delivered')
+        self.assertContains(response, 'Infrastructure & Management Hub')
+        self.assertContains(response, 'Manage Stations')
+        self.assertContains(response, 'Manage Chargers')
+
+    def test_admin_dashboard_denies_driver_and_redirects(self):
+        self.client.login(username='rajesh_driver', password='Password123!')
+        response = self.client.get(reverse('accounts:admin_dashboard'))
+        self.assertRedirects(response, reverse('accounts:driver_dashboard'))
+
+

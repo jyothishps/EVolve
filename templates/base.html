@@ -54,9 +54,15 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if 'station_list' in request.resolver_match.url_name or 'station_detail' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'stations:driver_station_list' %}">
-                            <i class="bi bi-ev-station"></i> Stations
-                        </a>
+                        {% if user.is_authenticated and user.is_admin %}
+                            <a class="nav-link {% if 'station_list' in request.resolver_match.url_name or 'station_add' in request.resolver_match.url_name or 'station_edit' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'stations:station_list' %}">
+                                <i class="bi bi-ev-station"></i> Stations
+                            </a>
+                        {% else %}
+                            <a class="nav-link {% if 'station_list' in request.resolver_match.url_name or 'station_detail' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'stations:driver_station_list' %}">
+                                <i class="bi bi-ev-station"></i> Stations
+                            </a>
+                        {% endif %}
                     </li>
                     {% if user.is_authenticated %}
                         {% if user.is_admin %}
