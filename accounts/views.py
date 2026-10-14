@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 
 from .forms import DriverRegisterForm, StyledAuthenticationForm
+from .dashboard_data import build_dashboard_analytics
 
 
 def register_view(request):
@@ -118,7 +119,7 @@ def admin_dashboard(request):
     recent_bookings = Booking.objects.select_related('user', 'station', 'charger', 'slot').order_by('-created_at')[:6]
     recent_sessions = ChargingSession.objects.select_related('booking', 'station', 'charger').order_by('-created_at')[:6]
 
-    return render(request, 'accounts/admin_dashboard.html', {
+    context = {
         'total_stations': total_stations,
         'active_stations': active_stations,
         'total_chargers': total_chargers,
@@ -136,4 +137,7 @@ def admin_dashboard(request):
         'total_revenue': round(total_revenue, 2),
         'recent_bookings': recent_bookings,
         'recent_sessions': recent_sessions,
-    })
+    }
+    context.update(build_dashboard_analytics())
+
+    return render(request, 'accounts/admin_dashboard.html', context)

@@ -1,46 +1,65 @@
-{% extends 'base.html' %}
-{% block title %}Manage Bookings{% endblock %}
+{% extends 'admin_base.html' %}
+{% load static %}
+
+{% block title %}Manage Bookings - Admin Console - EVolve{% endblock %}
+
+{% block page_title %}
+    <i class="bi bi-ticket-detailed text-cyan me-1"></i> Reservations &amp; Queue
+{% endblock %}
 
 {% block content %}
-<h2>All Bookings</h2>
 
-<form method="get" class="mb-4 d-flex gap-2" style="max-width: 400px;">
-    <input type="text" name="search" class="form-control" placeholder="Search by Booking ID" value="{{ search_query }}">
-    <button type="submit" class="btn btn-primary">Search</button>
-    {% if search_query %}
-        <a href="{% url 'bookings:admin_booking_list' %}" class="btn btn-secondary">Clear</a>
-    {% endif %}
-</form>
-
+<!-- Checked-in Queue Alert (Awaiting Session Start) -->
 {% if checked_in_queue %}
-<div class="card border-success mb-4">
-    <div class="card-header bg-success text-white">
-        <strong>Checked-In - Awaiting Session Start ({{ checked_in_queue.count }})</strong>
+<div class="adm-panel mb-4" style="border-color: rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(12, 19, 34, 0.95) 100%);">
+    <div class="adm-panel-header" style="border-bottom-color: rgba(16, 185, 129, 0.2);">
+        <div class="d-flex align-items-center gap-2">
+            <span class="rounded-circle bg-success text-white d-inline-flex p-1" style="font-size: 0.75rem;">
+                <i class="bi bi-person-check-fill px-1"></i>
+            </span>
+            <span class="fw-bold text-white small">
+                Checked-In Queue &bull; Awaiting Charging Cable Connection ({{ checked_in_queue.count }})
+            </span>
+        </div>
     </div>
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
+    <div class="table-responsive">
+        <table class="adm-table">
+            <thead>
                 <tr>
-                    <th>Booking ID</th>
-                    <th>User</th>
+                    <th style="width: 100px;">Booking</th>
+                    <th>Driver</th>
                     <th>Station</th>
                     <th>Checked In At</th>
-                    <th>Action</th>
+                    <th class="text-end" style="width: 200px;">Queue Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for booking in checked_in_queue %}
                 <tr>
-                    <td>#{{ booking.id }}</td>
-                    <td>{{ booking.user.username }}</td>
-                    <td>{{ booking.station.station_code }}</td>
-                    <td>{{ booking.checked_in_at }}</td>
                     <td>
-                        <a href="{% url 'sessions_app:session_start' booking.id %}" class="btn btn-sm btn-success">Start Session</a>
-                        <form method="post" action="{% url 'bookings:admin_booking_cancel' booking.id %}" class="d-inline"
-                              onsubmit="return confirm('Cancel booking #{{ booking.id }}?');">
+                        <a href="{% url 'bookings:booking_detail' booking.id %}" class="fw-bold text-cyan text-decoration-none font-monospace">
+                            #{{ booking.id }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="fw-semibold text-white">{{ booking.user.username }}</span>
+                    </td>
+                    <td>
+                        <span class="text-white">{{ booking.station.station_code }}</span>
+                        <span class="text-muted small">&bull; {{ booking.station.name }}</span>
+                    </td>
+                    <td>
+                        <span class="text-emerald font-monospace">{{ booking.checked_in_at|date:"h:i A" }}</span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'sessions_app:session_start' booking.id %}" class="btn btn-sm btn-success py-1 px-2 me-1" style="font-size: 0.76rem;">
+                            <i class="bi bi-play-circle-fill me-1"></i> Start Session
+                        </a>
+                        <form method="post" action="{% url 'bookings:admin_booking_cancel' booking.id %}" class="d-inline" onsubmit="return confirm('Cancel booking #{{ booking.id }}?');">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.76rem;" title="Cancel Reservation">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
                         </form>
                     </td>
                 </tr>
@@ -51,64 +70,152 @@
 </div>
 {% endif %}
 
-<h4>All Bookings</h4>
-<table class="table table-bordered table-hover bg-white">
-    <thead class="table-dark">
-        <tr>
-            <th>ID</th>
-            <th>User</th>
-            <th>Station</th>
-            <th>Date</th>
-            <th>Booking Payment</th>
-            <th>Status</th>
-            <th>Check-In</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for booking in bookings %}
-        <tr>
-            <td>#{{ booking.id }}</td>
-            <td>{{ booking.user.username }}</td>
-            <td>{{ booking.station.station_code }}</td>
-            <td>{{ booking.booking_date }}</td>
-            <td>
-                <span class="badge bg-{% if booking.payment_status == 'Paid' %}success{% elif booking.payment_status == 'Refunded' %}warning{% else %}secondary{% endif %}">
-                    Rs. {{ booking.booking_fee|floatformat:0 }} - {{ booking.payment_status }}
-                </span>
-            </td>
-            <td>
-                <span class="badge bg-{% if booking.status == 'Confirmed' %}success{% elif booking.status == 'Pending' %}warning{% elif booking.status == 'Completed' %}info{% else %}secondary{% endif %}">
-                    {{ booking.status }}
-                </span>
-            </td>
-            <td>
-                {% if booking.checked_in_at %}
-                    <span class="badge bg-success">Checked In</span>
-                {% else %}
-                    <span class="badge bg-secondary">Not Yet</span>
-                {% endif %}
-            </td>
-            <td>
-                <a href="{% url 'bookings:booking_detail' booking.id %}" class="btn btn-sm btn-outline-primary" title="View Ticket">View</a>
-                <a href="{% url 'bookings:booking_invoice' booking.id %}" class="btn btn-sm btn-outline-secondary" title="View Bill">
-                    <i class="bi bi-receipt"></i> Bill
-                </a>
-                {% if booking.status == 'Confirmed' %}
-                    <a href="{% url 'sessions_app:session_start' booking.id %}" class="btn btn-sm btn-outline-success">Start Session</a>
-                {% endif %}
-                {% if booking.status == 'Pending' or booking.status == 'Confirmed' %}
-                    <form method="post" action="{% url 'bookings:admin_booking_cancel' booking.id %}" class="d-inline"
-                          onsubmit="return confirm('Cancel booking #{{ booking.id }}? The slot will be freed.');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
-                    </form>
-                {% endif %}
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="8" class="text-center text-muted">No bookings found.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<!-- Toolbar with Backend Search Form & Client-Side Filter -->
+<div class="adm-toolbar">
+    <div class="adm-toolbar-left">
+        <span class="adm-panel-title">All Reservations</span>
+        <span class="badge bg-secondary bg-opacity-25 text-slate-300 ms-1">{{ bookings|length }} Found</span>
+
+        <!-- Backend Search by Booking ID (Exact params preserved) -->
+        <form method="get" class="d-flex align-items-center gap-1 ms-2">
+            <div class="adm-search-wrap">
+                <i class="bi bi-hash"></i>
+                <input type="text" name="search" class="adm-search-input" style="min-width: 140px; width: 140px;" placeholder="ID..." value="{{ search_query }}">
+            </div>
+            <button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.8rem;">Filter ID</button>
+            {% if search_query %}
+                <a href="{% url 'bookings:admin_booking_list' %}" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.8rem;">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Client-side instantaneous filter -->
+    <div class="adm-toolbar-right">
+        <div class="adm-search-wrap">
+            <i class="bi bi-search"></i>
+            <input type="text" id="bookingTableFilter" class="adm-search-input" placeholder="Filter visible (driver, station)...">
+        </div>
+    </div>
+</div>
+
+<div class="adm-panel">
+    <div class="table-responsive">
+        <table class="adm-table" id="bookingTable">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">ID</th>
+                    <th>Driver</th>
+                    <th>Station</th>
+                    <th>Date / Time</th>
+                    <th>Fee Payment</th>
+                    <th>Status</th>
+                    <th>Check-In</th>
+                    <th class="text-end" style="width: 160px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr class="booking-row">
+                    <td>
+                        <a href="{% url 'bookings:booking_detail' booking.id %}" class="fw-bold text-cyan text-decoration-none font-monospace">
+                            #{{ booking.id }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="fw-semibold text-white">{{ booking.user.username }}</span>
+                    </td>
+                    <td>
+                        <div class="text-white small fw-medium">{{ booking.station.station_code }}</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">{{ booking.station.name }}</div>
+                    </td>
+                    <td>
+                        <div class="font-monospace text-slate-300 small">{{ booking.booking_date|date:"d M Y" }}</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">{{ booking.booking_time|time:"g:i A" }}</div>
+                    </td>
+                    <td>
+                        {% if booking.payment_status == 'Paid' %}
+                            <span class="adm-chip adm-chip-ok">₹{{ booking.booking_fee|floatformat:0 }} Paid</span>
+                        {% elif booking.payment_status == 'Refunded' %}
+                            <span class="adm-chip adm-chip-info">₹{{ booking.booking_fee|floatformat:0 }} Refunded</span>
+                        {% elif booking.payment_status == 'Forfeited' %}
+                            <span class="adm-chip adm-chip-danger">₹{{ booking.booking_fee|floatformat:0 }} Forfeited</span>
+                        {% else %}
+                            <span class="adm-chip adm-chip-neutral">{{ booking.payment_status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if booking.status == 'Confirmed' %}
+                            <span class="adm-chip adm-chip-info">Confirmed</span>
+                        {% elif booking.status == 'Completed' %}
+                            <span class="adm-chip adm-chip-ok">Completed</span>
+                        {% elif booking.status == 'Cancelled' %}
+                            <span class="adm-chip adm-chip-danger">Cancelled</span>
+                        {% else %}
+                            <span class="adm-chip adm-chip-warn">{{ booking.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if booking.checked_in_at %}
+                            <span class="adm-chip adm-chip-ok">Arrived</span>
+                        {% else %}
+                            <span class="adm-chip adm-chip-neutral">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'bookings:booking_detail' booking.id %}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="View Ticket">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{% url 'bookings:booking_invoice' booking.id %}" class="btn btn-sm btn-outline-info py-1 px-2" title="View Bill">
+                            <i class="bi bi-receipt"></i>
+                        </a>
+                        {% if booking.status == 'Confirmed' %}
+                            <a href="{% url 'sessions_app:session_start' booking.id %}" class="btn btn-sm btn-outline-success py-1 px-2" title="Start Session">
+                                <i class="bi bi-play-circle"></i>
+                            </a>
+                        {% endif %}
+                        {% if booking.status == 'Pending' or booking.status == 'Confirmed' %}
+                            <form method="post" action="{% url 'bookings:admin_booking_cancel' booking.id %}" class="d-inline" onsubmit="return confirm('Cancel booking #{{ booking.id }}? The slot will be freed.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" title="Cancel Booking">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8">
+                        <div class="adm-empty">
+                            <i class="bi bi-ticket-perforated"></i>
+                            <div>No bookings match your query.</div>
+                            {% if search_query %}
+                                <a href="{% url 'bookings:admin_booking_list' %}" class="btn btn-sm btn-outline-secondary mt-1">Clear search filter</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function() {
+        var input = document.getElementById('bookingTableFilter');
+        if (input) {
+            input.addEventListener('keyup', function() {
+                var filter = input.value.toLowerCase().trim();
+                var rows = document.querySelectorAll('.booking-row');
+                rows.forEach(function(row) {
+                    var text = row.textContent.toLowerCase();
+                    row.style.display = text.indexOf(filter) > -1 ? '' : 'none';
+                });
+            });
+        }
+    })();
+</script>
 {% endblock %}

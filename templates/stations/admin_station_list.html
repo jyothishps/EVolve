@@ -1,78 +1,83 @@
-{% extends 'base.html' %}
-{% block title %}Manage Stations - Admin Cockpit{% endblock %}
+{% extends 'admin_base.html' %}
+{% load static %}
+
+{% block title %}Charging Stations - Admin Console - EVolve{% endblock %}
+
+{% block page_title %}
+    <i class="bi bi-ev-station text-cyan me-1"></i> Charging Stations
+{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'stations:station_add' %}" class="btn btn-sm btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Add Station
+    </a>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-    <div>
-        <div class="d-flex align-items-center gap-2 mb-1">
-            <span class="badge bg-warning bg-opacity-20 text-warning border border-warning border-opacity-30 px-3 py-1">
-                <i class="bi bi-shield-lock-fill me-1"></i> Admin Infrastructure
-            </span>
-            <span class="badge bg-white bg-opacity-10 text-slate-300">{{ stations|length }} Charging Hubs</span>
-        </div>
-        <h2 class="display-6 fw-bold text-white mb-0" style="letter-spacing: -0.02em;">Charging Stations</h2>
+<div class="adm-toolbar">
+    <div class="adm-toolbar-left">
+        <span class="adm-panel-title">Network Hubs</span>
+        <span class="badge bg-secondary bg-opacity-25 text-slate-300 ms-1">{{ stations|length }} Registered</span>
     </div>
-    <div class="d-flex gap-2">
-        <a href="{% url 'stations:station_add' %}" class="btn btn-primary px-3 shadow">
-            <i class="bi bi-plus-lg me-1"></i> Add Station
-        </a>
-        <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-outline-light">
-            <i class="bi bi-speedometer2 me-1"></i> Dashboard
-        </a>
+    <div class="adm-toolbar-right">
+        <div class="adm-search-wrap">
+            <i class="bi bi-search"></i>
+            <input type="text" id="stationTableSearch" class="adm-search-input" placeholder="Filter stations (code, name, city)...">
+        </div>
     </div>
 </div>
 
-<div class="card shadow-sm mb-4 overflow-hidden">
+<div class="adm-panel">
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+        <table class="adm-table" id="stationTable">
             <thead>
                 <tr>
-                    <th>Code</th>
+                    <th style="width: 100px;">Code</th>
                     <th>Station Name</th>
-                    <th>Address</th>
-                    <th>Tariff</th>
+                    <th>Location / Address</th>
+                    <th class="num">Tariff</th>
                     <th>Status</th>
-                    <th>Chargers</th>
-                    <th class="text-end">Actions</th>
+                    <th class="num">Chargers</th>
+                    <th class="text-end" style="width: 140px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for station in stations %}
-                <tr>
+                <tr class="station-row">
                     <td>
                         <a href="{% url 'stations:driver_station_detail' station.id %}" class="fw-bold text-cyan font-monospace text-decoration-none">
                             {{ station.station_code }}
                         </a>
                     </td>
                     <td>
-                        <div class="fw-bold text-white fs-6">{{ station.name }}</div>
+                        <div class="fw-semibold text-white">{{ station.name }}</div>
                         {% if station.location_type %}
                             <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ station.location_type }}</small>
                         {% endif %}
                     </td>
                     <td>
-                        <span class="text-slate-300 small">{{ station.address }}</span>
+                        <span class="text-secondary small">{{ station.address }}</span>
+                    </td>
+                    <td class="num">
+                        <span class="text-emerald font-monospace">₹{{ station.price_per_kWh }}/kWh</span>
                     </td>
                     <td>
-                        <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-30 font-monospace">
-                            ₹{{ station.price_per_kWh }}/kWh
-                        </span>
+                        {% if station.status == 'Active' %}
+                            <span class="adm-chip adm-chip-ok">Active</span>
+                        {% elif station.status == 'Maintenance' %}
+                            <span class="adm-chip adm-chip-warn">Maintenance</span>
+                        {% else %}
+                            <span class="adm-chip adm-chip-neutral">{{ station.status }}</span>
+                        {% endif %}
                     </td>
-                    <td>
-                        <span class="badge bg-{% if station.status == 'Active' %}success{% elif station.status == 'Maintenance' %}warning text-dark{% else %}secondary{% endif %}-subtle text-{% if station.status == 'Active' %}success{% elif station.status == 'Maintenance' %}warning{% else %}secondary{% endif %} border px-3 py-1">
-                            {{ station.status }}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge bg-white bg-opacity-10 text-white font-monospace">
-                            {{ station.number_of_chargers }} Chargers
-                        </span>
+                    <td class="num">
+                        <span class="font-monospace text-white">{{ station.number_of_chargers }}</span>
                     </td>
                     <td class="text-end">
-                        <a href="{% url 'stations:driver_station_detail' station.id %}" class="btn btn-sm btn-outline-secondary py-1 px-2 me-1" title="View Station Hub">
+                        <a href="{% url 'stations:driver_station_detail' station.id %}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="View Station Hub">
                             <i class="bi bi-eye"></i>
                         </a>
-                        <a href="{% url 'stations:station_edit' station.id %}" class="btn btn-sm btn-outline-info py-1 px-2 me-1" title="Edit Station">
+                        <a href="{% url 'stations:station_edit' station.id %}" class="btn btn-sm btn-outline-info py-1 px-2" title="Edit Station">
                             <i class="bi bi-pencil"></i>
                         </a>
                         <a href="{% url 'stations:station_delete' station.id %}" class="btn btn-sm btn-outline-danger py-1 px-2" title="Delete Station">
@@ -81,10 +86,38 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" class="text-center text-muted py-5">No stations registered in the network yet.</td></tr>
+                <tr>
+                    <td colspan="7">
+                        <div class="adm-empty">
+                            <i class="bi bi-ev-station"></i>
+                            <div>No stations registered in the network yet.</div>
+                            <a href="{% url 'stations:station_add' %}" class="btn btn-sm btn-primary mt-2">
+                                <i class="bi bi-plus-lg me-1"></i> Register First Station
+                            </a>
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function() {
+        var input = document.getElementById('stationTableSearch');
+        if (input) {
+            input.addEventListener('keyup', function() {
+                var filter = input.value.toLowerCase().trim();
+                var rows = document.querySelectorAll('.station-row');
+                rows.forEach(function(row) {
+                    var text = row.textContent.toLowerCase();
+                    row.style.display = text.indexOf(filter) > -1 ? '' : 'none';
+                });
+            });
+        }
+    })();
+</script>
 {% endblock %}

@@ -1,35 +1,67 @@
-{% extends 'base.html' %}
-{% block title %}Start Charging Session{% endblock %}
+{% extends request.user.is_admin|yesno:"admin_base.html,base.html" %}
+{% load static %}
+
+{% block title %}Start Session - Booking #{{ booking.id }} - Admin Console - EVolve{% endblock %}
+
+{% block page_title %}
+    <i class="bi bi-play-circle text-success me-1"></i> Start Charging Session
+{% endblock %}
 
 {% block content %}
-<h2>Start Charging Session</h2>
-<p class="text-muted">Booking #{{ booking.id }} - {{ booking.station.name }} - {{ booking.user.username }}</p>
+<div class="row justify-content-center">
+    <div class="col-xl-9">
+        <div class="adm-form-card">
+            <div class="adm-form-section">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h6 class="adm-form-section-title">Telemetry Pre-flight &bull; Booking #{{ booking.id }}</h6>
+                    <span class="adm-chip adm-chip-ok">Confirmed</span>
+                </div>
+                <div class="text-secondary small">
+                    Driver: <strong class="text-white">{{ booking.user.username }}</strong> &bull;
+                    Station: <strong class="text-white">{{ booking.station.station_code }} - {{ booking.station.name }}</strong> &bull;
+                    Charger: <strong class="text-white">{{ booking.charger.connector_type }}</strong>
+                </div>
+            </div>
 
-<div class="alert alert-info">
-    <strong>This project has no IoT hardware.</strong> Charging power ({{ rated_power }} kW) and
-    duration ({{ duration_hours }} hrs) are derived from the charger and booked slot. Actual load, traffic
-    density, and weather are <strong>estimated/simulated</strong> for demonstration — review and adjust below
-    before confirming.
-</div>
+            <div class="alert alert-info py-2 small mb-4 d-flex align-items-start gap-2" style="background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.25); color: #93c5fd;">
+                <i class="bi bi-info-circle-fill fs-6 mt-1 flex-shrink-0"></i>
+                <div>
+                    <strong>Simulation Notice:</strong> Charging power ({{ rated_power }} kW) and duration ({{ duration_hours }} hrs) are pulled directly from the charger and booked slot. Sensor values (actual load, traffic, weather) are pre-filled estimates for demonstration &mdash; review and adjust before starting.
+                </div>
+            </div>
 
+            <form method="post">
+                {% csrf_token %}
 
-<form method="post">
-    {% csrf_token %}
-    {% for field in form %}
-        <div class="mb-3">
-            <label class="form-label">{{ field.label }}</label>
-            {{ field }}
-            {% if field.name == 'actual_load' or field.name == 'traffic_density' or field.name == 'weather_condition' %}
-                <small class="text-muted">Simulated value — adjustable</small>
-            {% elif field.name == 'charging_power_kW' or field.name == 'duration' %}
-                <small class="text-muted">Derived from charger/slot data</small>
-            {% endif %}
-            {% if field.errors %}
-                <div class="text-danger small">{{ field.errors|join:", " }}</div>
-            {% endif %}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger py-2 small mb-3">{{ form.non_field_errors|join:" " }}</div>
+                {% endif %}
+
+                <div class="row g-3 mb-3">
+                    {% for field in form %}
+                    <div class="col-md-6">
+                        <label class="adm-form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.name == 'actual_load' or field.name == 'traffic_density' or field.name == 'weather_condition' %}
+                            <small class="text-muted d-block mt-1" style="font-size: 0.73rem;">Simulated sensor telemetry &mdash; adjustable</small>
+                        {% elif field.name == 'charging_power_kW' or field.name == 'duration' %}
+                            <small class="text-muted d-block mt-1" style="font-size: 0.73rem;">Derived from charger &amp; slot schedule</small>
+                        {% endif %}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1" style="font-size: 0.74rem;">{{ field.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="adm-form-actions">
+                    <a href="{% url 'bookings:admin_booking_list' %}" class="btn btn-sm btn-outline-secondary px-3">Cancel</a>
+                    <button type="submit" class="btn btn-sm btn-success px-4">
+                        <i class="bi bi-play-circle-fill me-1"></i> Confirm &amp; Start Session
+                    </button>
+                </div>
+            </form>
         </div>
-    {% endfor %}
-    <button type="submit" class="btn btn-success">Confirm &amp; Start Session</button>
-    <a href="{% url 'bookings:admin_booking_list' %}" class="btn btn-secondary">Cancel</a>
-</form>
+    </div>
+</div>
 {% endblock %}

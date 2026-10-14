@@ -1,78 +1,194 @@
-{% extends 'base.html' %}
-{% block title %}Session Details{% endblock %}
+{% extends request.user.is_admin|yesno:"admin_base.html,base.html" %}
+{% load static %}
+
+{% block title %}Session #{{ session.id }} - Admin Console - EVolve{% endblock %}
+
+{% block page_title %}
+    <i class="bi bi-activity text-danger me-1"></i> Session #{{ session.id }} Telemetry
+{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'sessions_app:session_list' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> All Sessions
+    </a>
+{% endblock %}
 
 {% block content %}
-<h2>Charging Session #{{ session.id }}</h2>
-
-<div class="row g-3 mt-1">
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <p><strong>Booking:</strong> #{{ session.booking.id }} ({{ session.booking.user.username }})</p>
-                <p><strong>Station:</strong> {{ session.station.name }} ({{ session.station.station_code }})</p>
-                <p><strong>Charger:</strong> #{{ session.charger.id }} ({{ session.charger.charging_power_kW }} kW)</p>
-                <p><strong>Timestamp:</strong> {{ session.timestamp }}</p>
-                <p><strong>Actual Load (simulated):</strong> {{ session.actual_load }} kW</p>
-                <p><strong>Charging Power:</strong> {{ session.charging_power_kW }} kW</p>
-                <p><strong>Duration:</strong> {{ session.duration }} hours</p>
-                <p><strong>Energy Delivered:</strong> {{ session.energy_kWh }} kWh</p>
-                <p><strong>Traffic Density (Estimated):</strong> {{ session.get_traffic_density_display }}</p>
-                <p><strong>Weather (Estimated):</strong> {{ session.weather_condition }}</p>
-                <p><strong>Booking Status:</strong>
-                    <span class="badge bg-{% if session.booking.status == 'Completed' %}info{% else %}warning{% endif %}">
-                        {{ session.booking.status }}
-                    </span>
-                </p>
+<div class="row g-3">
+    <!-- Session Telemetry Panel -->
+    <div class="col-lg-6">
+        <div class="adm-panel h-100">
+            <div class="adm-panel-header">
+                <div>
+                    <h6 class="adm-panel-title">
+                        <i class="bi bi-lightning-charge text-cyan"></i> Charging Telemetry
+                    </h6>
+                    <div class="adm-panel-subtitle">Station hardware load and dispenser metrics</div>
+                </div>
+                <div>
+                    {% if session.booking.status == 'Completed' %}
+                        <span class="adm-chip adm-chip-ok">Completed</span>
+                    {% else %}
+                        <span class="adm-chip adm-chip-warn">{{ session.booking.status }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="adm-panel-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Booking Reference</div>
+                        <div class="fw-semibold text-white">
+                            #{{ session.booking.id }} &bull; {{ session.booking.user.username }}
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Station Location</div>
+                        <div class="fw-semibold text-white">
+                            {{ session.station.name }} <span class="font-monospace text-cyan">({{ session.station.station_code }})</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Hardware Unit</div>
+                        <div class="fw-semibold text-white">
+                            Charger #{{ session.charger.id }} &bull; {{ session.charger.charging_power_kW }} kW
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Session Timestamp</div>
+                        <div class="font-monospace text-slate-300 small">
+                            {{ session.timestamp|date:"d M Y, h:i A" }}
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Actual Load (simulated)</div>
+                        <div class="font-monospace text-warning fw-bold fs-6">
+                            {{ session.actual_load }} kW
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Charging Power</div>
+                        <div class="font-monospace text-white fw-bold fs-6">
+                            {{ session.charging_power_kW }} kW
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Session Duration</div>
+                        <div class="font-monospace text-slate-300">
+                            {{ session.duration }} hours
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Energy Dispensed</div>
+                        <div class="font-monospace text-cyan fw-bold fs-6">
+                            {{ session.energy_kWh }} kWh
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Traffic Density</div>
+                        <div class="text-slate-300 small">
+                            {{ session.get_traffic_density_display }}
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Weather Condition</div>
+                        <div class="text-slate-300 small">
+                            {{ session.weather_condition }}
+                        </div>
+                    </div>
+                </div>
 
                 {% if session.booking.status != 'Completed' %}
+                <div class="border-top border-white border-opacity-10 pt-3 mt-3">
                     <form method="post" action="{% url 'sessions_app:session_complete' session.id %}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-success">Mark Session Complete</button>
+                        <button type="submit" class="btn btn-sm btn-success px-3">
+                            <i class="bi bi-check-circle me-1"></i> Mark Session Complete
+                        </button>
                     </form>
-                    <small class="text-muted">The bill is generated when you complete the session.</small>
+                    <small class="text-muted d-block mt-2">
+                        Marking complete calculates total energy delivered and generates the station bill.
+                    </small>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header"><strong>Billing</strong></div>
-            <div class="card-body">
+    <!-- Billing & Settlement Panel -->
+    <div class="col-lg-6">
+        <div class="adm-panel h-100">
+            <div class="adm-panel-header">
+                <div>
+                    <h6 class="adm-panel-title">
+                        <i class="bi bi-receipt text-emerald"></i> Energy Billing &amp; Settlement
+                    </h6>
+                    <div class="adm-panel-subtitle">Tariff invoice calculation and payment recording</div>
+                </div>
+            </div>
+            <div class="adm-panel-body">
                 {% if session.booking.status == 'Completed' %}
-                    <p><strong>Energy:</strong> {{ session.energy_kWh }} kWh</p>
-                    <p><strong>Rate:</strong> Rs. {{ session.price_per_kWh_applied }} per kWh</p>
-                    <h4>Total: Rs. {{ session.amount }}</h4>
-                    <p>
-                        <span class="badge bg-{% if session.payment_status == 'Paid' %}success{% else %}danger{% endif %}">
-                            {{ session.payment_status }}
-                        </span>
-                    </p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6">
+                            <div class="text-muted small">Energy Delivered</div>
+                            <div class="font-monospace fw-bold text-white fs-5">{{ session.energy_kWh }} <span class="fs-6 fw-normal text-muted">kWh</span></div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="text-muted small">Tariff Applied</div>
+                            <div class="font-monospace text-emerald fs-5">₹{{ session.price_per_kWh_applied }}/kWh</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="bg-black bg-opacity-30 p-3 rounded border border-white border-opacity-10 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">Total Billing Amount</div>
+                                    <div class="display-6 fw-bold text-white mb-0 font-monospace">₹{{ session.amount }}</div>
+                                </div>
+                                <div>
+                                    {% if session.payment_status == 'Paid' %}
+                                        <span class="adm-chip adm-chip-ok fs-6 px-3 py-1">Paid</span>
+                                    {% else %}
+                                        <span class="adm-chip adm-chip-danger fs-6 px-3 py-1">Unpaid</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     {% if session.payment_status == 'Paid' %}
-                        <p><strong>Method:</strong> {{ session.payment_method }}</p>
-                        <p><strong>Paid at:</strong> {{ session.paid_at }}</p>
-                        <p class="text-muted"><small>Payment recorded by station admin.</small></p>
+                        <div class="adm-panel p-3 mb-0" style="background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2);">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                <span class="fw-semibold text-white">Settlement Verified</span>
+                            </div>
+                            <div class="small text-slate-300">
+                                <strong>Payment Method:</strong> {{ session.payment_method }}<br>
+                                <strong>Paid At:</strong> {{ session.paid_at|date:"d M Y, h:i A" }}<br>
+                                <span class="text-muted">Recorded by station administrator.</span>
+                            </div>
+                        </div>
                     {% else %}
-                        <form method="post" action="{% url 'sessions_app:session_mark_paid' session.id %}">
+                        <form method="post" action="{% url 'sessions_app:session_mark_paid' session.id %}" class="border-top border-white border-opacity-10 pt-3">
                             {% csrf_token %}
-                            <label class="form-label">Payment method received</label>
-                            <select name="payment_method" class="form-select mb-2" required>
-                                <option value="">-- Select --</option>
+                            <label class="adm-form-label">Payment Method Received</label>
+                            <select name="payment_method" class="form-select mb-3" required style="background:#080d16; color:#fff; border-color:rgba(255,255,255,0.15);">
+                                <option value="">-- Select Method --</option>
                                 <option value="Cash">Cash</option>
                                 <option value="UPI">UPI</option>
                                 <option value="Card">Card</option>
                             </select>
-                            <button type="submit" class="btn btn-primary">Mark as Paid</button>
+                            <button type="submit" class="btn btn-sm btn-primary px-3">
+                                <i class="bi bi-cash-stack me-1"></i> Record Payment as Received
+                            </button>
                         </form>
                     {% endif %}
                 {% else %}
-                    <p class="text-muted">Bill will be generated once the session is completed.</p>
+                    <div class="adm-empty">
+                        <i class="bi bi-clock-history"></i>
+                        <div>Session is currently active.</div>
+                        <div class="small">The final tariff bill will be computed once the session is marked complete.</div>
+                    </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
-
-<a href="{% url 'sessions_app:session_list' %}" class="btn btn-secondary mt-3">Back to Sessions</a>
 {% endblock %}

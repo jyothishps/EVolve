@@ -1,112 +1,134 @@
-{% extends 'base.html' %}
-{% block title %}Manage Slots - Admin Cockpit{% endblock %}
+{% extends 'admin_base.html' %}
+{% load static %}
+
+{% block title %}Time Slots - Admin Console - EVolve{% endblock %}
+
+{% block page_title %}
+    <i class="bi bi-calendar3 text-cyan me-1"></i> Charging Slots
+{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'stations:slot_add' %}" class="btn btn-sm btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Create Slot
+    </a>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-    <div>
-        <div class="d-flex align-items-center gap-2 mb-1">
-            <span class="badge bg-warning bg-opacity-20 text-warning border border-warning border-opacity-30 px-3 py-1">
-                <i class="bi bi-shield-lock-fill me-1"></i> Slot Capacity
-            </span>
-            <span class="badge bg-white bg-opacity-10 text-slate-300">{{ slots|length }} Configured Windows</span>
-        </div>
-        <h2 class="display-6 fw-bold text-white mb-0" style="letter-spacing: -0.02em;">Charging Slots</h2>
+<div class="adm-toolbar">
+    <div class="adm-toolbar-left">
+        <span class="adm-panel-title">Scheduled Slots</span>
+        <span class="badge bg-secondary bg-opacity-25 text-slate-300 ms-1">{{ slots|length }} Total</span>
     </div>
-    <div class="d-flex flex-wrap gap-2">
-        <a href="{% url 'stations:slot_add' %}" class="btn btn-primary px-3 shadow">
-            <i class="bi bi-plus-lg me-1"></i> Add Slot
-        </a>
-        <a href="{% url 'stations:charger_list' %}" class="btn btn-outline-success">
-            <i class="bi bi-lightning-charge me-1"></i> Chargers
-        </a>
-        <a href="{% url 'stations:station_list' %}" class="btn btn-outline-info">
-            <i class="bi bi-ev-station me-1"></i> Stations
-        </a>
-        <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-outline-light">
-            <i class="bi bi-speedometer2 me-1"></i> Dashboard
-        </a>
+    <div class="adm-toolbar-right">
+        <div class="adm-search-wrap">
+            <i class="bi bi-search"></i>
+            <input type="text" id="slotTableSearch" class="adm-search-input" placeholder="Filter slots (station, date, status)...">
+        </div>
     </div>
 </div>
 
-<div class="card shadow-sm mb-4 overflow-hidden">
-    <div class="card-header bg-transparent py-3 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold text-white">
-            <i class="bi bi-calendar3 text-primary me-2"></i>Time Slot Schedule
-        </h5>
-        <span class="badge bg-white bg-opacity-10 text-slate-300 border border-white border-opacity-10 px-3 py-1">
-            {{ slots|length }} Total Slots
-        </span>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th style="width: 90px;">Slot ID</th>
-                        <th>Station</th>
-                        <th>Charger</th>
-                        <th>Date</th>
-                        <th>Time Window</th>
-                        <th>Status</th>
-                        <th class="text-end" style="width: 220px;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for slot in slots %}
-                    <tr>
-                        <td>
-                            <span class="badge bg-dark border border-white border-opacity-15 font-monospace text-cyan px-2 py-1">
-                                #{{ slot.id }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="fw-bold text-white fs-6">{{ slot.station.name }}</div>
-                            <small class="text-muted font-monospace">Code: {{ slot.station.station_code }}</small>
-                        </td>
-                        <td>
-                            <span class="badge bg-primary bg-opacity-20 text-cyan border border-primary border-opacity-30">
-                                Charger #{{ slot.charger.id }} ({{ slot.charger.connector_type }})
-                            </span>
-                        </td>
-                        <td>
-                            <span class="text-white">{{ slot.date }}</span>
-                        </td>
-                        <td>
-                            <span class="badge bg-dark border font-monospace px-2 py-1 text-light">
-                                {{ slot.start_time }} - {{ slot.end_time }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge bg-{% if slot.status == 'Available' %}success{% elif slot.status == 'Reserved' %}warning text-dark{% elif slot.status == 'Completed' %}info{% else %}secondary{% endif %}-subtle text-{% if slot.status == 'Available' %}success{% elif slot.status == 'Reserved' %}warning{% elif slot.status == 'Completed' %}info{% else %}secondary{% endif %} border px-3 py-1">
-                                {{ slot.status }}
-                            </span>
-                        </td>
-                        <td class="text-end">
-                            <a href="{% url 'stations:slot_edit' slot.id %}" class="btn btn-sm btn-outline-info py-1 px-2 me-1" title="Edit Slot">
-                                <i class="bi bi-pencil me-1"></i>Edit
+<div class="adm-panel">
+    <div class="table-responsive">
+        <table class="adm-table" id="slotTable">
+            <thead>
+                <tr>
+                    <th style="width: 85px;">Slot ID</th>
+                    <th>Station</th>
+                    <th>Charger Unit</th>
+                    <th>Date</th>
+                    <th>Time Window</th>
+                    <th>Status</th>
+                    <th class="text-end" style="width: 170px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slot in slots %}
+                <tr class="slot-row">
+                    <td>
+                        <span class="font-monospace text-cyan fw-bold">#{{ slot.id }}</span>
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-white">{{ slot.station.name }}</div>
+                        <small class="text-muted font-monospace">{{ slot.station.station_code }}</small>
+                    </td>
+                    <td>
+                        <span class="text-white small">Unit #{{ slot.charger.id }}</span>
+                        <span class="text-muted small">({{ slot.charger.connector_type }})</span>
+                    </td>
+                    <td>
+                        <span class="font-monospace text-white">{{ slot.date }}</span>
+                    </td>
+                    <td>
+                        <span class="font-monospace text-slate-300 small">
+                            {{ slot.start_time }} - {{ slot.end_time }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if slot.status == 'Available' %}
+                            <span class="adm-chip adm-chip-ok">Available</span>
+                        {% elif slot.status == 'Reserved' %}
+                            <span class="adm-chip adm-chip-warn">Reserved</span>
+                        {% elif slot.status == 'Completed' %}
+                            <span class="adm-chip adm-chip-info">Completed</span>
+                        {% elif slot.status == 'Cancelled' %}
+                            <span class="adm-chip adm-chip-danger">Cancelled</span>
+                        {% else %}
+                            <span class="adm-chip adm-chip-neutral">{{ slot.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'stations:slot_edit' slot.id %}" class="btn btn-sm btn-outline-info py-1 px-2" title="Edit Slot">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="post" action="{% url 'stations:slot_delete' slot.id %}" class="d-inline" onsubmit="return confirm('Delete Slot #{{ slot.id }}?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" title="Delete Slot">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                        {% if slot.status == 'Completed' or slot.status == 'Cancelled' %}
+                        <form method="post" action="{% url 'stations:slot_reopen' slot.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-success py-1 px-2" title="Reopen Slot">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="adm-empty">
+                            <i class="bi bi-calendar3"></i>
+                            <div>No charging slots configured yet.</div>
+                            <a href="{% url 'stations:slot_add' %}" class="btn btn-sm btn-primary mt-2">
+                                <i class="bi bi-plus-lg me-1"></i> Create First Slot
                             </a>
-                            <form method="post" action="{% url 'stations:slot_delete' slot.id %}" class="d-inline" onsubmit="return confirm('Delete this slot?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2 me-1" title="Delete Slot">
-                                    <i class="bi bi-trash me-1"></i>Delete
-                                </button>
-                            </form>
-                            {% if slot.status == 'Completed' or slot.status == 'Cancelled' %}
-                            <form method="post" action="{% url 'stations:slot_reopen' slot.id %}" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-success py-1 px-2" title="Reopen Slot">
-                                    <i class="bi bi-arrow-repeat me-1"></i>Reopen
-                                </button>
-                            </form>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="7" class="text-center text-muted py-5">No slots configured yet.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function() {
+        var input = document.getElementById('slotTableSearch');
+        if (input) {
+            input.addEventListener('keyup', function() {
+                var filter = input.value.toLowerCase().trim();
+                var rows = document.querySelectorAll('.slot-row');
+                rows.forEach(function(row) {
+                    var text = row.textContent.toLowerCase();
+                    row.style.display = text.indexOf(filter) > -1 ? '' : 'none';
+                });
+            });
+        }
+    })();
+</script>
 {% endblock %}

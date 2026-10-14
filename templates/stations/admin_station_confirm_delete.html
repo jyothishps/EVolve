@@ -1,13 +1,38 @@
-{% extends 'base.html' %}
-{% block title %}Delete Station{% endblock %}
+{% extends 'admin_base.html' %}
+
+{% block title %}Delete Station - Admin Console - EVolve{% endblock %}
+
+{% block page_title %}
+    <i class="bi bi-trash text-danger me-1"></i> Delete Station
+{% endblock %}
 
 {% block content %}
-<h2>Delete Station</h2>
-<p>Are you sure you want to delete <strong>{{ station.name }} ({{ station.station_code }})</strong>? This will also delete related chargers, slots, and bookings.</p>
+<div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+        <div class="adm-panel">
+            <div class="adm-panel-header" style="border-bottom-color: rgba(239, 68, 68, 0.2);">
+                <h6 class="adm-panel-title text-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Confirm Deletion
+                </h6>
+            </div>
+            <div class="adm-panel-body">
+                <p class="text-white mb-2">
+                    Are you sure you want to delete charging station <strong>{{ station.name }} ({{ station.station_code }})</strong>?
+                </p>
+                <div class="alert alert-danger py-2 small mb-3">
+                    <i class="bi bi-exclamation-circle-fill me-1"></i>
+                    This action is permanent and will cascade delete all linked chargers, time slots, and reservations associated with this station.
+                </div>
 
-<form method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Yes, Delete</button>
-    <a href="{% url 'stations:station_list' %}" class="btn btn-secondary">Cancel</a>
-</form>
+                <form method="post" class="d-flex justify-content-end gap-2 pt-2">
+                    {% csrf_token %}
+                    <a href="{% url 'stations:station_list' %}" class="btn btn-sm btn-outline-secondary px-3">Cancel</a>
+                    <button type="submit" class="btn btn-sm btn-danger px-3">
+                        <i class="bi bi-trash me-1"></i> Yes, Delete Station
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

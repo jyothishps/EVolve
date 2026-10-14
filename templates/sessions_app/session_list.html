@@ -1,55 +1,129 @@
-{% extends 'base.html' %}
-{% block title %}Charging Sessions{% endblock %}
+{% extends request.user.is_admin|yesno:"admin_base.html,base.html" %}
+{% load static %}
+
+{% block title %}Charging Sessions - Admin Console - EVolve{% endblock %}
+
+{% block page_title %}
+    <i class="bi bi-activity text-cyan me-1"></i> Charging Sessions
+{% endblock %}
 
 {% block content %}
-<h2>Charging Sessions</h2>
+<div class="adm-toolbar">
+    <div class="adm-toolbar-left">
+        <span class="adm-panel-title">Telemetry Ledger</span>
+        <span class="badge bg-secondary bg-opacity-25 text-slate-300 ms-1">{{ sessions|length }} Sessions</span>
+    </div>
+    <div class="adm-toolbar-right">
+        <div class="adm-search-wrap">
+            <i class="bi bi-search"></i>
+            <input type="text" id="sessionTableSearch" class="adm-search-input" placeholder="Filter sessions (id, station, status)...">
+        </div>
+    </div>
+</div>
 
-<table class="table table-bordered table-hover bg-white">
-    <thead class="table-dark">
-        <tr>
-            <th>ID</th>
-            <th>Booking</th>
-            <th>Station</th>
-            <th>Energy (kWh)</th>
-            <th>Load (kW)</th>
-            <th>Timestamp</th>
-            <th>Status</th>
-            <th>Amount</th>
-            <th>Payment</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for session in sessions %}
-        <tr>
-            <td>{{ session.id }}</td>
-            <td>#{{ session.booking.id }}</td>
-            <td>{{ session.station.station_code }}</td>
-            <td>{{ session.energy_kWh }}</td>
-            <td>{{ session.actual_load }}</td>
-            <td>{{ session.timestamp }}</td>
-            <td>
-                <span class="badge bg-{% if session.booking.status == 'Completed' %}info{% else %}warning{% endif %}">
-                    {{ session.booking.status }}
-                </span>
-            </td>
-            <td>
-                {% if session.booking.status == 'Completed' %}Rs. {{ session.amount }}{% else %}-{% endif %}
-            </td>
-            <td>
-                {% if session.booking.status == 'Completed' %}
-                    <span class="badge bg-{% if session.payment_status == 'Paid' %}success{% else %}danger{% endif %}">{{ session.payment_status }}</span>
-                {% else %}
-                    <span class="text-muted">-</span>
-                {% endif %}
-            </td>
-            <td>
-                <a href="{% url 'sessions_app:session_detail' session.id %}" class="btn btn-sm btn-outline-primary">View</a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="10" class="text-center text-muted">No charging sessions yet.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="adm-panel">
+    <div class="table-responsive">
+        <table class="adm-table" id="sessionTable">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">ID</th>
+                    <th>Booking</th>
+                    <th>Station</th>
+                    <th class="num">Energy</th>
+                    <th class="num">Actual Load</th>
+                    <th>Timestamp</th>
+                    <th>Status</th>
+                    <th class="num">Amount</th>
+                    <th>Payment</th>
+                    <th class="text-end" style="width: 80px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in sessions %}
+                <tr class="session-row">
+                    <td>
+                        <a href="{% url 'sessions_app:session_detail' session.id %}" class="fw-bold text-danger text-decoration-none font-monospace">
+                            #{{ session.id }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="text-white font-monospace">#{{ session.booking.id }}</span>
+                    </td>
+                    <td>
+                        <span class="text-white small fw-medium">{{ session.station.station_code }}</span>
+                    </td>
+                    <td class="num">
+                        <span class="text-white fw-bold">{{ session.energy_kWh }}</span>
+                        <span class="text-muted small">kWh</span>
+                    </td>
+                    <td class="num">
+                        <span class="text-slate-300">{{ session.actual_load }}</span>
+                        <span class="text-muted small">kW</span>
+                    </td>
+                    <td>
+                        <span class="text-secondary small font-monospace">{{ session.timestamp|date:"d M Y, h:i A" }}</span>
+                    </td>
+                    <td>
+                        {% if session.booking.status == 'Completed' %}
+                            <span class="adm-chip adm-chip-ok">Completed</span>
+                        {% else %}
+                            <span class="adm-chip adm-chip-warn">{{ session.booking.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="num">
+                        {% if session.booking.status == 'Completed' %}
+                            <span class="text-emerald font-monospace fw-bold">₹{{ session.amount }}</span>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if session.booking.status == 'Completed' %}
+                            {% if session.payment_status == 'Paid' %}
+                                <span class="adm-chip adm-chip-ok">Paid</span>
+                            {% else %}
+                                <span class="adm-chip adm-chip-danger">{{ session.payment_status }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted small">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'sessions_app:session_detail' session.id %}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="View Telemetry">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10">
+                        <div class="adm-empty">
+                            <i class="bi bi-activity"></i>
+                            <div>No charging telemetry recorded yet.</div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function() {
+        var input = document.getElementById('sessionTableSearch');
+        if (input) {
+            input.addEventListener('keyup', function() {
+                var filter = input.value.toLowerCase().trim();
+                var rows = document.querySelectorAll('.session-row');
+                rows.forEach(function(row) {
+                    var text = row.textContent.toLowerCase();
+                    row.style.display = text.indexOf(filter) > -1 ? '' : 'none';
+                });
+            });
+        }
+    })();
+</script>
 {% endblock %}
